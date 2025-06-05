@@ -54,7 +54,7 @@ function Navbar() {
                </Link>
 
                {/* Desktop navigation links */}
-               <div className="hidden lg:flex text-lg font-semibold items-center space-x-6">
+               <div className="hidden lg:flex text-lg font-semibold items-center space-x-4">
                   <Link
                      to="/"
                      className="text-theme-medium hover:text-theme-dark px-2 py-2">
