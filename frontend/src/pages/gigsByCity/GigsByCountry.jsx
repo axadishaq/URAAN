@@ -19,7 +19,7 @@ const GigsByCountry = () => {
             setGigs(res.data);
          } catch (err) {
             console.error("Error fetching gigs:", err); // Debug log
-            setError("Failed to fetch gigs");
+            setError("Something went wrong!",err);
          } finally {
             setLoading(false);
          }
