@@ -13,7 +13,7 @@ function Featured() {
    };
 
    return (
-      <section className="hero-pattern py-26 md:py-34 min-h-screen">
+      <section className="hero-pattern py-26 md:py-34 min-h-[50vh]">
          <div className="container mx-auto px-4 md:px-8">
             <div className="max-w-3xl mx-auto text-center">
                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-theme-dark mb-10">
