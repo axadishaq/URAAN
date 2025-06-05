@@ -13,7 +13,7 @@ import {
 import { Home } from "./pages/home/Home";
 import { Login } from "./pages/login/Login";
 import { Register } from "./pages/register/Register";
-import Navbar from "./components/navbar/Navbar";
+import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/footer/Footer";
 import Gigs from "./pages/gigs/Gigs";
 import Gig from "./pages/gig/Gig";
