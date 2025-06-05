@@ -128,7 +128,7 @@ export const Login = () => {
                </div>
 
                {/* Continue with Google */}
-               <Link
+               <span
                   to=""
                   target="_blank"
                   rel="noopener noreferrer"
@@ -156,20 +156,20 @@ export const Login = () => {
                      <path d="M1 1h22v22H1z" fill="none" />
                   </svg>
                   Continue with Google
-               </Link>
+               </span>
 
                {/* Continue with Number */}
-               {/* <Link
-               to=""
-               className="inline-block w-full text-center bg-white border border-theme-medium text-theme-dark py-3 px-4 rounded-lg font-medium hover:bg-theme-light transition-colors mb-4">
-               Continue with Number
-            </Link> */}
+               <span
+                  to=""
+                  className="inline-block w-full text-center bg-white border border-theme-medium text-theme-dark py-3 px-4 rounded-lg font-medium hover:bg-theme-light transition-colors mb-4">
+                  Continue with Number
+               </span>
 
                <p className="mt-4 text-center text-theme-medium">
                   Don't have an account?{" "}
                   <Link
                      to="/register"
-                     className="text-theme-dark hover:text-theme-accent">
+                     className=" text-theme-dark hover:text-theme-accent">
                      Register now
                   </Link>
                </p>
