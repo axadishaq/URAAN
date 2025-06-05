@@ -130,11 +130,11 @@ function Footer() {
                   </div>
 
                   {/* <!-- Services --> */}
-                  <div className="space-y-4">
+                  <div className="space-y-4 sm:block hidden">
                      <h3 className="text-lg font-semibold tracking-wider text-theme-accent uppercase">
                         Services
                      </h3>
-                     <ul className="space-y-2 sm:block hidden">
+                     <ul className="space-y-2 ">
                         <li>
                            <a
                               href=""
