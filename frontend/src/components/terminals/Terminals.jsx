@@ -5,17 +5,17 @@ export const Terminals = () => {
       <>
          <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto">
             <div className="text-center mb-12">
-               <span className="text-theme-accent font-semibold uppercase tracking-wider text-sm">
-                  What They Think
+               <span className="text-theme-accent font-semibold uppercase tracking-wider text-md">
+                 Creative Brains, Calm Chaos Managers, and Code Wizards
                </span>
                <h2 className="text-3xl md:text-4xl font-bold text-theme-dark mt-2">
-                  Testimonials
+               That’s Our Kind of Team
                </h2>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
                {/* <!-- Testimonial 1 --> */}
-               <div className="bg-white p-8 rounded-lg shadow-md">
+               <div className="bg-white p-8 rounded-lg shadow-lg">
                   <div className="mb-6">
                      <div className="flex mb-4">
                         <svg
@@ -50,12 +50,12 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "URAAN team provides excellent support, listens to their
-                        users and continually works to improve their product"
+                        "Bridges teams and ideas with thoughtful direction and a
+                        user-first mindset."
                      </p>
                   </div>
                   <div className="flex items-center">
-                     <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
+                     <div className="w-16 h-16 bg-theme-light rounded-full mr-4">
                         {" "}
                         <img
                            className="h-full w-full object-contain rounded-full"
@@ -64,14 +64,18 @@ export const Terminals = () => {
                         />
                      </div>
                      <div>
-                        <h4 className="font-bold text-theme-dark">Ahsan Razzaq</h4>
-                        <p className="text-theme-medium text-sm">Designer</p>
+                        <h4 className="font-bold text-theme-dark">
+                           Chaudhary Ahsan
+                        </h4>
+                        <p className="text-theme-medium text-sm">
+                           Front-End Developer
+                        </p>
                      </div>
                   </div>
                </div>
 
                {/* <!-- Testimonial 2 --> */}
-               <div className="bg-white p-8 rounded-lg shadow-md">
+               <div className="bg-white p-8 rounded-lg shadow-lg">
                   <div className="mb-6">
                      <div className="flex mb-4">
                         <svg
@@ -106,12 +110,12 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "URAAN team provides excellent support, listens to their
-                        users and continually works to improve their product"
+                        "Designs intuitive, elegant user experiences with a love
+                        for aesthetics and empathy."
                      </p>
                   </div>
                   <div className="flex items-center">
-                     <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
+                     <div className="w-16 h-16 bg-theme-light rounded-full mr-4">
                         {" "}
                         <img
                            className="h-full w-full object-contain rounded-full"
@@ -121,15 +125,17 @@ export const Terminals = () => {
                      </div>
                      <div>
                         <h4 className="font-bold text-theme-dark">
-                           Asad Ishaq
+                           Asad Chaudhary
                         </h4>
-                        <p className="text-theme-medium text-sm">Technician</p>
+                        <p className="text-theme-medium text-sm">
+                           Lead Developer
+                        </p>
                      </div>
                   </div>
                </div>
 
                {/* <!-- Testimonial 3 --> */}
-               <div className="bg-white p-8 rounded-lg shadow-md">
+               <div className="bg-white p-8 rounded-lg shadow-lg">
                   <div className="mb-6">
                      <div className="flex mb-4">
                         <svg
@@ -164,12 +170,12 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "URAAN team provides excellent support, listens to their
-                        users and continually works to improve their product"
+                        "Keeps projects on track and teams in sync with
+                        patience, precision, and a steady hand."
                      </p>
                   </div>
                   <div className="flex items-center">
-                     <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
+                     <div className="w-16 h-16 bg-theme-light rounded-full mr-4">
                         <img
                            className="h-full w-full object-contain rounded-full"
                            src="https://scontent.fmux3-1.fna.fbcdn.net/v/t39.30808-6/480740597_1374874460623570_6990066826087531187_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_ohc=OtSNGDp-DpkQ7kNvwHW-Z_L&_nc_oc=Admv_cryjTDTi16-n3QahAIY_fpFwJY9V3-GBbu9Wssy5sNnURM7OZ-e38h3OIQxfoc&_nc_zt=23&_nc_ht=scontent.fmux3-1.fna&_nc_gid=yEQy6Cmr7B6dViMmCzY3dg&oh=00_AfPnFShIg1KIRcZ9Id4gF-FPR07Y6EP1SXQVyDawY3QJCw&oe=68477813"
@@ -180,7 +186,9 @@ export const Terminals = () => {
                         <h4 className="font-bold text-theme-dark">
                            Malik Zeeshan
                         </h4>
-                        <p className="text-theme-medium text-sm">Carpanter</p>
+                        <p className="text-theme-medium text-sm">
+                           Project Manager
+                        </p>
                      </div>
                   </div>
                </div>
