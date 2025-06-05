@@ -151,14 +151,23 @@ function Navbar() {
                   {/* Shopping bag - always visible */}
                   {!currentUser?.isSeller && (
                      <div className="flex items-center">
-                        <Link
-                           to="/myenrollments"
-                           className="flex items-center text-theme-dark hover:text-theme-accent">
-                           <ShoppingBag className="sm:h-6 sm:w-6 w-4 h-4" />
-                           <span className="ml-1 bg-theme-accent text-theme-dark text-xs font-semibold rounded-full px-2 sm:py-0.5">
-                              0
+                        {currentUser ? (
+                           <Link
+                              to="/myenrollments"
+                              className="flex items-center text-theme-dark hover:text-theme-accent">
+                              <ShoppingBag className="sm:h-6 sm:w-6 w-4 h-4" />
+                              <span className="ml-1 bg-theme-accent text-theme-dark text-xs font-semibold rounded-full px-2 sm:py-0.5">
+                                 0
+                              </span>
+                           </Link>
+                        ) : (
+                           <span className="flex items-center text-theme-dark hover:text-theme-accent">
+                              <ShoppingBag className="sm:h-6 sm:w-6 w-4 h-4" />
+                              <span className="ml-1 bg-theme-accent text-theme-dark text-xs font-semibold rounded-full px-2 sm:py-0.5">
+                                 0
+                              </span>
                            </span>
-                        </Link>
+                        )}
                      </div>
                   )}
                   {currentUser ? (
