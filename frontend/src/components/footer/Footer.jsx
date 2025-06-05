@@ -3,7 +3,7 @@ import React from "react";
 function Footer() {
    return (
       <>
-         <footer className=" text-white pt-16 pb-8 px-4 sm:px-6 lg:px-8">
+         <footer className=" text-white pt-8 pb-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   {/* <!-- Company Info --> */}
@@ -14,7 +14,7 @@ function Footer() {
                            alt=""
                            className="h-12 w-12 object-center"
                         />
-                        <span className="text-2xl mt-6 font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
+                        <span className="text-2xl mt-2 font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
                            URAAN
                         </span>
                      </div>
