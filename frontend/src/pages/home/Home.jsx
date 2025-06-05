@@ -1,5 +1,5 @@
 import React from "react";
-
+import "./Home.scss";
 import Featured from "../../components/featured/Featured";
 import { Slide } from "../../components/slide/Slide";
 import { cards, projects } from "../../data";
