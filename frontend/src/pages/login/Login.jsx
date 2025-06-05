@@ -2,9 +2,8 @@ import React from "react";
 import { useState } from "react";
 import newRequest from "../../utils/newRequest";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Link } from "react-router-dom";
-import Navbar from "../../components/navbar/Navbar";
+import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 
 export const Login = () => {
