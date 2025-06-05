@@ -161,8 +161,8 @@ function Navbar() {
                               </span>
                            </Link>
                         ) : (
-                           <span className="flex items-center text-theme-dark hover:text-theme-accent">
-                              <ShoppingBag className="sm:h-6 sm:w-6 w-4 h-4" />
+                           <span className=" flex items-center text-theme-dark hover:text-theme-accent ">
+                              <ShoppingBag className="sm:h-6 sm:w-6 w-4 h-4 " />
                               <span className="ml-1 bg-theme-accent text-theme-dark text-xs font-semibold rounded-full px-2 sm:py-0.5">
                                  0
                               </span>
@@ -237,17 +237,10 @@ function Navbar() {
                      </div>
                   ) : (
                      <>
-                        <div className="hidden lg:block w-auto">
+                        <div className="hidden sm:block w-auto">
                            <Link
                               to="/login"
                               className="bg-theme-light hover:bg-theme-accent text-theme-dark font-medium px-5 py-4 rounded-xl transition duration-500 ease-in-out border border-theme-accent ">
-                              Log In / Sign Up
-                           </Link>
-                        </div>
-                        <div className="md:hidden">
-                           <Link
-                              to="/login"
-                              className="bg-theme-light hover:bg-theme-accent text-theme-dark font-medium px-5 py-3 rounded-lg text-sm transition duration-500 ease-in-out border border-theme-accent ">
                               Log In / Sign Up
                            </Link>
                         </div>
@@ -273,7 +266,7 @@ function Navbar() {
          </div>
 
          {/* Mobile menu, show/hide based on menu state */}
-         <div className={`md:hidden ${isMenuOpen ? "block" : "hidden"}`}>
+         <div className={`lg:hidden ${isMenuOpen ? "block" : "hidden"}`}>
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-2">
                <Link
                   to="/"
@@ -406,6 +399,15 @@ function Navbar() {
                         </Link>
                      </div>
                   )}
+                  <div className="text-center py-3 ">
+                     {!currentUser && (
+                        <Link
+                           to="/login"
+                           className="sm:hidden block bg-theme-light hover:bg-theme-accent text-theme-dark font-medium px-5 py-4 rounded-xl transition duration-500 ease-in-out border border-theme-accent ">
+                           Log In / Sign Up
+                        </Link>
+                     )}
+                  </div>
                </div>
             </div>
          </div>
