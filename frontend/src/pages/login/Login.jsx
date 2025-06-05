@@ -3,7 +3,7 @@ import { useState } from "react";
 import newRequest from "../../utils/newRequest";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import Navbar from "../../components/Navbar/Navbar";
+import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 
 export const Login = () => {
@@ -48,14 +48,18 @@ export const Login = () => {
    return (
       <>
          <Navbar />
-         <div className="min-h-screen bg-theme-light flex flex-col items-center py-6 px-6 sm:px-6 lg:px-10">
+         <div className="min-h-[60vh] bg-theme-light flex flex-col items-center py-6 px-6 sm:px-6 lg:px-10">
             <div className="flex justify-center mb-8">
                <div className="flex justify-between h-16">
                   {/* Logo and brand name */}
                   <Link to="/" className="flex items-center">
                      <div className="flex ">
-                        <img src="/uraan.png" alt="" className="h-24 w-24 " />
-                        <h1 className="text-5xl font-bold  items-center  mt-10 bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
+                        <img
+                           src="/uraan.png"
+                           alt=""
+                           className="h-18 w-18 sm:w-24 sm:h-24 "
+                        />
+                        <h1 className="text-3xl sm:text-5xl font-bold  items-center  mt-8 bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
                            URAAN
                         </h1>
                      </div>
