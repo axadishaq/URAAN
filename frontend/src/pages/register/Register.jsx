@@ -5,7 +5,7 @@ import upload from "../../utils/upload";
 import newRequest from "../../utils/newRequest";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
-import Navbar from "../../components/Navbar/Navbar";
+import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 export const Register = () => {
    const [formErrors, setFormErrors] = useState({});
@@ -75,8 +75,12 @@ export const Register = () => {
                   {/* Logo and brand name */}
                   <Link to="/" className="flex items-center">
                      <div className="flex ">
-                        <img src="/uraan.png" alt="" className="h-24 w-24 " />
-                        <h1 className="text-5xl font-bold items-center  mt-10 bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
+                        <img
+                           src="/uraan.png"
+                           alt=""
+                           className="h-18 w-18 sm:w-24 sm:h-24"
+                        />
+                        <h1 className="text-3xl sm:text-5xl font-bold items-center  mt-10 bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-pink-500 to-blue-500">
                            URAAN
                         </h1>
                      </div>
@@ -250,7 +254,7 @@ export const Register = () => {
                </div>
 
                {/* Continue with Google */}
-               <Link
+               <span
                   to=""
                   target="_blank"
                   rel="noopener noreferrer"
@@ -278,7 +282,7 @@ export const Register = () => {
                      <path d="M1 1h22v22H1z" fill="none" />
                   </svg>
                   Continue with Google
-               </Link>
+               </span>
 
                {/* Continue with Number */}
                {/* <Link
