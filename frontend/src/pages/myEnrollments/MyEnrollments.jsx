@@ -1,0 +1,102 @@
+import React, { useEffect, useState } from "react";
+import newRequest from "../../utils/newRequest";
+
+function MyEnrollments() {
+   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+   const [courses, setCourses] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+
+   useEffect(() => {
+      const fetchEnrollments = async () => {
+         try {
+            // Get all enrollments for the current user
+            const enrollmentsRes = await newRequest.get(
+               `/enrollments/user/${currentUser._id}`
+            );
+            const enrollments = enrollmentsRes.data;
+
+            // Fetch course details for each enrollment
+            const coursePromises = enrollments.map((enroll) =>
+               newRequest
+                  .get(`/courses/${enroll.courseId}`)
+                  .then((res) => res.data)
+            );
+            const coursesData = await Promise.all(coursePromises);
+            setCourses(coursesData);
+         } catch (err) {
+            setError("Failed to load enrolled courses.");
+         }
+         setLoading(false);
+      };
+      if (currentUser?._id) fetchEnrollments();
+   }, [currentUser]);
+
+   return (
+      <>
+         {courses && courses.length === 0 ? null : (
+            <div className="bg-theme-light min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+               <div className="max-w-7xl mx-auto">
+                  <h1 className="text-4xl font-semibold text-theme-dark mb-6">
+                     My Enrolled Courses
+                  </h1>
+                  {loading ? (
+                     <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
+                        <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
+                           <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
+                        </div>
+                     </div>
+                  ) : error ? (
+                     <div className="text-red-500">{error}</div>
+                  ) : (
+                     <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div className="bg-theme-dark text-white p-4 flex items-center justify-between">
+                           <h2 className="text-xl font-semibold">
+                              Enrolled Courses
+                           </h2>
+                        </div>
+                        <div className="divide-y divide-gray-300">
+                           {courses && courses.length > 0 ? (
+                              courses.map((course) => (
+                                 <div
+                                    key={course._id}
+                                    className="p-2 px-8 flex flex-wrap justify-between items-center hover:bg-theme-light transition-all ">
+                                    <div className="flex gap-2">
+                                       <img
+                                          src={course.coverImage}
+                                          alt="Course"
+                                          className="w-28 h-16 rounded object-cover"
+                                       />
+                                       <div className="flex flex-col justify-center">
+                                          <h4 className="text-theme-dark font-semibold">
+                                             {course.title}
+                                          </h4>
+                                          <p className="text-theme-medium text-sm">
+                                             Category: {course.category}
+                                          </p>
+                                          <p className="text-theme-medium text-sm">
+                                             Level: {course.level}
+                                          </p>
+                                       </div>
+                                    </div>
+                                    <div className="rounded-lg hidden sm:block">
+                                       <p>RS. {course.price}</p>
+                                    </div>
+                                 </div>
+                              ))
+                           ) : (
+                              <div className="p-4 text-center text-theme-medium">
+                                 No enrolled courses found.
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  )}
+               </div>
+            </div>
+         )}
+      </>
+   );
+}
+
+export default MyEnrollments;

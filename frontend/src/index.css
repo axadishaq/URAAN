@@ -1,0 +1,88 @@
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Comic+Relief:wght@400;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Nanum+Myeongjo&family=Noto+Sans+JP:wght@100..900&family=Noto+Sans+Mandaic&family=Noto+Sans+Tai+Viet&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Tagesschrift&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Merienda:wght@300..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Rock+Salt&display=swap");
+@import "tailwindcss";
+* {
+   /* font-family: Nunito Sans; */
+   /* font-family: Winky Sans; */
+   /* font-family: Inter; */
+   /* font-family: Caveat; */
+   /* font-family: Tagesschrif; */
+   /* font-family: Comic Relief; */
+   /* font-family: Merriweather; */
+   /* font-family: Josefin Sans; */
+   /* font-family: Merienda, cursive; */
+}
+
+/* Optional: Add your custom styles here */
+
+body {
+   font-family: "Inter", sans-serif;
+}
+.hero-pattern {
+   background-color: #fbe6d8;
+   background-image: radial-gradient(#efa180 0.5px, transparent 0.5px);
+   background-size: 15px 15px;
+}
+.border-theme-dark {
+   border-color: #2b0d07;
+}
+.border-theme-accent {
+   border-color: #efa180;
+}
+.border-theme-light {
+   border-color: #fbe6d8;
+}
+.border-theme-medium {
+   border-color: #8b6654;
+}
+.text-theme-dark {
+   color: #2b0d07;
+}
+.text-theme-medium {
+   color: #8b6654;
+}
+.text-theme-accent {
+   color: #efa180;
+}
+.bg-theme-accent {
+   background-color: #efa180;
+}
+.bg-theme-light {
+   background-color: #fbe6d8;
+}
+.bg-theme-dark {
+   background-color: #2b0d07;
+}
+.hover\:bg-theme-medium:hover {
+   background-color: #8b6654;
+}
+.hover\:bg-theme-dark:hover {
+   background-color: #2b0d07;
+}
+.hover\:bg-theme-light:hover {
+   background-color: #fbe6d8;
+}
+.hover\:bg-theme-accent:hover {
+   background-color: #efa180;
+}
+.hover\:text-theme-dark:hover {
+   color: #2b0d07;
+}
+.hover\:text-theme-light:hover {
+   color: #fbe6d8;
+}
+.hover\:text-theme-accent:hover {
+   color: #efa180;
+}
+
+.g-btn {
+   background: linear-gradient(to right, #efa180, #efa180, #2b0d07);
+   transition: all 0.3s ease-in-out;
+   forced-color-adjust: auto;
+   border: 2px solid #2b0d07;
+}
+
+.g-btn:hover {
+   background: linear-gradient(to left, #efa180, #8b6654);
+   border-color: #2b0d07;
+}

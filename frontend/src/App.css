@@ -1,0 +1,19 @@
+#root {
+   width: auto;
+   margin: 0 auto;
+}
+
+/* CSS Animation .io */
+
+.leFlyInLeft {
+   animation: leFlyInLeft 4s ease-in-out;
+}
+@keyframes leFlyInLeft {
+   0% {
+      transform: translate(-40px, 0px);
+      opacity: 0;
+   }
+   50% {
+      transform: translate(40px, 0px);
+   }
+}
