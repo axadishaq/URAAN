@@ -284,13 +284,6 @@ export const Register = () => {
                   Continue with Google
                </span>
 
-               {/* Continue with Number */}
-               {/* <Link
-               to=""
-               className="inline-block w-full text-center bg-white border border-theme-medium text-theme-dark py-3 px-4 rounded-lg font-medium hover:bg-theme-light transition-colors mb-4">
-               Continue with Number
-            </Link> */}
-
                <p className="mt-4 text-center text-theme-medium">
                   Already have an account?{" "}
                   <Link
