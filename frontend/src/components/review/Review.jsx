@@ -1,5 +1,4 @@
 import React from "react";
-import "./Review.scss";
 import { useQuery } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
 
