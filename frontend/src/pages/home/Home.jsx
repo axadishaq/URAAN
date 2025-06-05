@@ -1,10 +1,7 @@
 import React from "react";
 import "./Home.scss";
 import Featured from "../../components/featured/Featured";
-import { Slide } from "../../components/slide/Slide";
-import { cards, projects } from "../../data";
 import CatCard from "../../components/catCard/CatCard";
-import ProjectCard from "../../components/projectCard/ProjectCard";
 import { FeatureCities } from "../../components/featurecities/FeatureCities";
 import { FeatureCourses } from "../../components/featurecourse/FeatureCourses";
 import { Terminals } from "../../components/terminals/Terminals";
@@ -120,12 +117,6 @@ export const Home = () => {
          </div>
          <FeatureCourses />
 
-         {/* Gig cards */}
-         <Slide slidesToShow={4} arrowsScroll={4}>
-            {projects.map((card) => (
-               <ProjectCard key={card.id} card={card} />
-            ))}
-         </Slide>
          <Terminals />
          <Howitworks />
          <FeatureBlog />
