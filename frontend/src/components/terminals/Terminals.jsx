@@ -50,7 +50,7 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "Findy team provides excellent support, listens to their
+                        "URAAN team provides excellent support, listens to their
                         users and continually works to improve their product"
                      </p>
                   </div>
@@ -58,13 +58,13 @@ export const Terminals = () => {
                      <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
                         {" "}
                         <img
-                           className="h-full w-full object-contain"
-                           src="/img/avatar.png"
+                           className="h-full w-full object-contain rounded-full"
+                           src="https://scontent.fmux3-1.fna.fbcdn.net/v/t39.30808-6/492135448_687668687096825_307939973281033828_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=108&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=PM9BR_XebqMQ7kNvwE4Wu-O&_nc_oc=AdmCi19KDVmtWzieAaKK10wYzpdhY2CA_bQxVKIvU53x-ML7xA48qPtil6QCzzWSgbA&_nc_zt=23&_nc_ht=scontent.fmux3-1.fna&_nc_gid=Ww9_P5kCPJc4IA_ERg9Dyg&oh=00_AfNvAnulyl6WCqWmedaFAI2RAQHO5jwTzBzxdSvNg_dhfg&oe=68475808"
                            alt=""
                         />
                      </div>
                      <div>
-                        <h4 className="font-bold text-theme-dark">M Ahmad</h4>
+                        <h4 className="font-bold text-theme-dark">Ahsan Razzaq</h4>
                         <p className="text-theme-medium text-sm">Designer</p>
                      </div>
                   </div>
@@ -106,7 +106,7 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "Findy team provides excellent support, listens to their
+                        "URAAN team provides excellent support, listens to their
                         users and continually works to improve their product"
                      </p>
                   </div>
@@ -114,14 +114,14 @@ export const Terminals = () => {
                      <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
                         {" "}
                         <img
-                           className="h-full w-full object-contain"
-                           src="/img/avatar.png"
+                           className="h-full w-full object-contain rounded-full"
+                           src="https://media.licdn.com/dms/image/v2/D4E03AQH0rTqieUFTPQ/profile-displayphoto-shrink_200_200/B4EZX.wUWnGgAY-/0/1743735835565?e=1754524800&v=beta&t=99BIRUel4tS9L_wadVTdpia87pUo7NrQp4XMWvguxa4"
                            alt=""
                         />
                      </div>
                      <div>
                         <h4 className="font-bold text-theme-dark">
-                           Mumtaz Ali Dost
+                           Asad Ishaq
                         </h4>
                         <p className="text-theme-medium text-sm">Technician</p>
                      </div>
@@ -164,21 +164,21 @@ export const Terminals = () => {
                         </svg>
                      </div>
                      <p className="text-theme-medium italic">
-                        "Findy team provides excellent support, listens to their
+                        "URAAN team provides excellent support, listens to their
                         users and continually works to improve their product"
                      </p>
                   </div>
                   <div className="flex items-center">
                      <div className="w-12 h-12 bg-theme-light rounded-full mr-4">
                         <img
-                           className="h-full w-full object-contain"
-                           src="/img/avatar.png"
+                           className="h-full w-full object-contain rounded-full"
+                           src="https://scontent.fmux3-1.fna.fbcdn.net/v/t39.30808-6/480740597_1374874460623570_6990066826087531187_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_ohc=OtSNGDp-DpkQ7kNvwHW-Z_L&_nc_oc=Admv_cryjTDTi16-n3QahAIY_fpFwJY9V3-GBbu9Wssy5sNnURM7OZ-e38h3OIQxfoc&_nc_zt=23&_nc_ht=scontent.fmux3-1.fna&_nc_gid=yEQy6Cmr7B6dViMmCzY3dg&oh=00_AfPnFShIg1KIRcZ9Id4gF-FPR07Y6EP1SXQVyDawY3QJCw&oe=68477813"
                            alt=""
                         />
                      </div>
                      <div>
                         <h4 className="font-bold text-theme-dark">
-                           Hashir Dogar
+                           Malik Zeeshan
                         </h4>
                         <p className="text-theme-medium text-sm">Carpanter</p>
                      </div>
