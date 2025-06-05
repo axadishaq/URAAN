@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-// import "./Gigs.scss";
-// import { gigs } from "../../data";
 import GigCard from "../../components/gigCard/GigCard";
 import newRequest from "../../utils/newRequest";
 import {
@@ -119,14 +117,11 @@ function Gigs() {
             <div className=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 bg-theme-light">
                {/* <!-- Card  --> */}
                {isLoading ? (
-                  <>
-                     {/* <!-- From Uiverse.io by devAaus -->  */}
                      <div className="flex-col gap-4 w-full mx-auto flex items-center justify-center">
                         <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
                            <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
                         </div>
                      </div>
-                  </>
                ) : error ? (
                   <div className="text-red-600">{error}</div>
                ) : (
