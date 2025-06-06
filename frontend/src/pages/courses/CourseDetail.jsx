@@ -76,8 +76,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import newRequest from "../../utils/newRequest";
+import newRequest from "../../utils/newRequest.js";
 
 const CourseDetail = () => {
    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -94,8 +93,8 @@ const CourseDetail = () => {
    useEffect(() => {
       const fetchCourse = async () => {
          try {
-            const res = await axios.get(
-               `http://localhost:8800/api/courses/${id}`
+            const res = await newRequest.get(
+               `/courses/${id}`
             );
             setCourse(res.data);
          } catch (err) {
@@ -147,7 +146,7 @@ const CourseDetail = () => {
          <img
             src={course.coverImage || "/img/avatar.png"}
             alt={course.title}
-            className="w-full h-64 object-cover rounded-md mb-6"
+            className="w-full h-64 object-contain border rounded-md mb-6"
          />
          <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
          <p className="mb-4 text-theme-medium">{course.description}</p>
