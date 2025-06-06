@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import newRequest from "../../utils/newRequest";
 
 const Enrollments = () => {
@@ -19,8 +18,8 @@ const Enrollments = () => {
       }
       const fetchEnrollments = async () => {
          try {
-            // const res = await axios.get(
-            //    `http://localhost:8800/api/enrollments/user/${userId}`,
+            // const res = await newRequest.get(
+            //    `/enrollments/user/${userId}`,
             //    {
             //       headers: {
             //          Authorization: `Bearer ${token}`,
@@ -28,7 +27,7 @@ const Enrollments = () => {
             //    }
             // );
             const res = await newRequest(
-               `http://localhost:8800/api/enrollments/user/${userId}`
+               `/enrollments/user/${userId}`
             );
             setEnrollments(res.data);
          } catch (err) {
