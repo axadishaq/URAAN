@@ -1,4 +1,3 @@
-import axios from "axios";
 import React from "react";
 import { useState } from "react";
 import upload from "../../utils/upload";
@@ -50,7 +49,7 @@ export const Register = () => {
       const img_url = await upload(file);
       console.log(img_url);
       try {
-         await axios.post("http://localhost:8800/api/auth/register", {
+         await newRequest.post("/auth/register", {
             ...user,
             img: img_url,
          });
