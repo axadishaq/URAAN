@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import newRequest from "../../utils/newRequest.js";
 import { Link, useLocation } from "react-router";
 
 const Courses = () => {
@@ -14,7 +14,7 @@ const Courses = () => {
    useEffect(() => {
       const fetchCourses = async () => {
          try {
-            const res = await axios.get("http://localhost:8800/api/courses");
+            const res = await newRequest.get("/courses");
             let data = res.data;
             if (level) {
                data = data.filter((course) => course.level === level);
