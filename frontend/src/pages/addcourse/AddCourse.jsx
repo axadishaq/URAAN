@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import newRequest from "../../utils/newRequest.js";
 import { useNavigate } from "react-router-dom";
 import upload from "../../utils/upload";
 import { useId } from "react";
@@ -43,7 +43,7 @@ const AddCourse = () => {
             ...form,
             coverImage: coverImageUrl,
          };
-         await axios.post("http://localhost:8800/api/courses", courseData);
+         await newRequest.post("/courses", courseData);
          navigate("/courses");
       } catch (err) {
          setError("Failed to add course");
