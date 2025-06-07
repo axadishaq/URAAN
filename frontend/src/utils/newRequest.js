@@ -1,7 +1,15 @@
 import axios from "axios";
 
+const baseURL = import.meta.env.VITE_REQUEST || "http://localhost:5000/api";
+if (!import.meta.env.VITE_REQUEST) {
+   console.warn(
+      "VITE_REQUEST environment variable is not defined. Using fallback baseURL:",
+      baseURL
+   );
+}
+
 const newRequest = axios.create({
-   baseURL: "http://localhost:8800/api",
+   baseURL: baseURL,
    withCredentials: true,
 });
 
