@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import newRequest from "../../utils/newRequest.js";
 
 const GigsByCountry = () => {
    const { country } = useParams();
@@ -12,14 +12,12 @@ const GigsByCountry = () => {
    useEffect(() => {
       const fetchGigs = async () => {
          try {
-            const res = await axios.get(
-               `http://localhost:8800/api/gigs/country/${country}`
-            );
+            const res = await newRequest.get(`/gigs/country/${country}`);
             // console.log("Fetched gigs:", res.data); // Debug log
             setGigs(res.data);
          } catch (err) {
             console.error("Error fetching gigs:", err); // Debug log
-            setError("Something went wrong!",err);
+            setError(err, "Error fetching services for this city.");
          } finally {
             setLoading(false);
          }
@@ -69,6 +67,7 @@ const GigsByCountry = () => {
                   {gigs.map((gig) => (
                      <Link
                         to={`/gig/${gig._id}`}
+                        key={gig._id}
                         className="block transition-all">
                         <div className="bg-white rounded-lg overflow-hidden shadow-lg duration-300 hover:transform hover:scale-103">
                            {/* <!-- Gig Cover Image --> */}
