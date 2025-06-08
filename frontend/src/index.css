@@ -11,6 +11,8 @@
    /* font-family: Merriweather; */
    /* font-family: Josefin Sans; */
    /* font-family: Merienda, cursive; */
+   scroll-behavior: smooth;
+   scroll-padding-top: 65px;
 }
 
 /* Optional: Add your custom styles here */
