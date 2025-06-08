@@ -3,13 +3,15 @@ import React from "react";
 export const Terminals = () => {
    return (
       <>
-         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto">
+         <section
+            className="py-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto"
+            id="terminals">
             <div className="text-center mb-12">
                <span className="text-theme-accent font-semibold uppercase tracking-wider text-md">
-                 Creative Brains, Calm Chaos Managers, and Code Wizards
+                  Creative Brains, Calm Chaos Managers, and Code Wizards
                </span>
                <h2 className="text-3xl md:text-4xl font-bold text-theme-dark mt-2">
-               That’s Our Kind of Team
+                  That’s Our Kind of Team
                </h2>
             </div>
 
