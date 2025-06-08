@@ -13,7 +13,7 @@ export const verifyToken = (req, res, next) => {
    });
 };
 export const verifyAdmin = (req, res, next) => {
-   if (!req.isAdmin) {
+   if (!req.userId === process.env.ADMIN_ID) {
       return next(createError(403, "Admin access required!"));
    }
    next();
