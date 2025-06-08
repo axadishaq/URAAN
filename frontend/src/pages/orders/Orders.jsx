@@ -39,16 +39,15 @@ const Orders = () => {
    return (
       <>
          {isLoading ? (
-            <>
-               {/* Loader  */}
                <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
                   <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
                      <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
                   </div>
                </div>
-            </>
          ) : error ? (
-            <div className="text-red-600">{error}</div>
+            <div className="text-red-600">
+               {error.message || "Something went wrong!"}
+            </div>
          ) : (
             <div className="h-auto">
                <div className="bg-theme-light h-auto py-8 px-4 sm:px-6 lg:px-8">
