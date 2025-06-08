@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_REQUEST || "http://localhost:5000/api";
+const baseURL = import.meta.env.VITE_REQUEST;
 if (!import.meta.env.VITE_REQUEST) {
    console.warn(
       "VITE_REQUEST environment variable is not defined. Using fallback baseURL:",
