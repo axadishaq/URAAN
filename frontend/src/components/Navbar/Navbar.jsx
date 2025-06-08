@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Menu, X, ShoppingBag, ChevronDown } from "lucide-react";
 
 import { Link, useLocation } from "react-router-dom";
+
 import newRequest from "../../utils/newRequest";
 import { useNavigate } from "react-router-dom";
 
@@ -37,7 +38,7 @@ function Navbar() {
 
    return (
       <nav className="bg-white shadow-md w-full sticky top-0 z-50 transition-all duration-300 ">
-         <div className="max-w-8xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+         <div className="max-w-8xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex justify-between sm:h-16 h-10">
                {/* Logo and brand name */}
                <Link to="/" className="flex items-center">
@@ -45,7 +46,7 @@ function Navbar() {
                      <img
                         src="/uraan.png"
                         alt=""
-                        className="sm:h-16 sm:w-16  h-8 w-8 "
+                        className="sm:h-14 sm:w-14  h-8 w-8 "
                      />
                      <h1 className="text-xl mt-2 sm:mt-6 sm:text-2xl font-bold items-center bg-clip-text text-transparent bg-gradient-to-r from-[#2b0d07] to-[#efa180] ">
                         URAAN
@@ -127,21 +128,21 @@ function Navbar() {
                         <ChevronDown className="ml-1 w-4 h-4" />
                      </button>
                      <div className="absolute hidden group-hover:block bg-theme-light shadow-lg rounded-md py-1 w-48 z-10">
-                        <Link
-                           to=""
+                        <a
+                           href="#terminals"
                            className="block px-4 py-2 text-sm text-theme-dark hover:bg-theme-accent">
-                           Blog
-                        </Link>
-                        <Link
-                           to=""
+                           Our Team
+                        </a>
+                        <a
+                           href="#how-it-works"
                            className="block px-4 py-2 text-sm text-theme-dark hover:bg-theme-accent">
                            How It Works
-                        </Link>
-                        <Link
-                           to=""
+                        </a>
+                        <a
+                           href="#blog"
                            className="block px-4 py-2 text-sm text-theme-dark hover:bg-theme-accent">
-                           FAQ
-                        </Link>
+                           Blog
+                        </a>
                      </div>
                   </div>
                </div>
