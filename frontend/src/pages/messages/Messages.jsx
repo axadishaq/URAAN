@@ -18,7 +18,7 @@ const Messages = () => {
       queryKey: ["conversations", currentUser._id],
       queryFn: () =>
          newRequest.get(`/conversations`).then((res) => {
-            console.log(res.data);
+            // console.log(res.data);
             return res.data;
          }),
    });
@@ -69,16 +69,15 @@ const Messages = () => {
                         </div>
                      </div>
                      {isLoading ? (
-                        <>
-                           {/* Loader  */}
-                           <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                              <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                                 <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                              </div>
+                        <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
+                           <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
+                              <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
                            </div>
-                        </>
+                        </div>
                      ) : error ? (
-                        <div className="text-red-600">{error}</div>
+                        <div className="text-red-600">
+                           {error.message || "Someting went wrong!"}
+                        </div>
                      ) : (
                         <>
                            <div className="flex border-b border-gray-200">
@@ -96,7 +95,9 @@ const Messages = () => {
                               {/* Active Conversation */}
                               {data && data.length > 0 ? (
                                  data.map((c) => (
-                                    <div className="border-l-4 border-theme-accent bg-theme-light/30 hover:bg-theme-light p-4 cursor-pointer transition-all">
+                                    <div
+                                       className="border-l-4 border-theme-accent bg-theme-light/30 hover:bg-theme-light p-4 cursor-pointer transition-all"
+                                       key={c.id}>
                                        <div
                                           className={
                                              ((currentUser.isSeller &&
