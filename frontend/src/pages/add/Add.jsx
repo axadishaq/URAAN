@@ -1,315 +1,389 @@
-import React, { useReducer, useState } from "react";
-import { X } from "lucide-react";
-
-import { gigReducer, INITIAL_STATE } from "../../pages/reducers/gigReducer.js";
-import upload from "../../utils/upload.js";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import newRequest from "../../utils/newRequest.js";
-import { useNavigate } from "react-router-dom";
+import { Check, Upload, X } from "lucide-react";
+
+import upload from "../../utils/upload.js";
+import newRequest, { getErrorMessage } from "../../utils/newRequest.js";
+import { getCurrentUser } from "../../utils/currentUser";
+import { SERVICE_CATEGORIES, categoryLabel } from "../../utils/categories";
+import { CITIES } from "../../utils/cities";
+import { formatPrice } from "../../utils/format";
+import { Badge, Field, Notice, PageTitle, SelectField, TextAreaField } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
+
+const MAX_PHOTOS = 6;
+
+const Step = ({ n, title, children }) => (
+   <section className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+      <h2 className="m-0 flex items-center gap-2.5 text-[19px] font-bold">
+         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-sm text-white">{n}</span>
+         {title}
+      </h2>
+      {children}
+   </section>
+);
 
 const Add = () => {
-   const [singleFile, setSingleFile] = useState(undefined);
-   const [files, setFiles] = useState([]);
+   const currentUser = getCurrentUser();
+   const [form, setForm] = useState({
+      title: "",
+      category: "",
+      country: currentUser?.country || "",
+      desc: "",
+      shortTitle: "",
+      shortDesc: "",
+      price: "",
+      deliveryTime: "",
+      revisionNumber: "",
+   });
+   const [features, setFeatures] = useState([]);
+   const [featureText, setFeatureText] = useState("");
+   const [photos, setPhotos] = useState([]); // [{ file, url }]
+   const [errors, setErrors] = useState({});
+   const [submitError, setSubmitError] = useState("");
    const [uploading, setUploading] = useState(false);
-
-   const [state, dispatch] = useReducer(gigReducer, INITIAL_STATE);
-
-   const handleChange = (e) => {
-      dispatch({
-         type: "CHANGE_INPUT",
-         payload: { name: e.target.name, value: e.target.value },
-      });
-   };
-
-   const handleFeature = (e) => {
-      e.preventDefault();
-      dispatch({
-         type: "ADD_FEATURE",
-         payload: e.target[0].value,
-      });
-      e.target[0].value = "";
-   };
-
-   const handleUpload = async () => {
-      setUploading(true);
-      try {
-         const cover = await upload(singleFile);
-
-         const images = await Promise.all(
-            [...files].map(async (file) => {
-               const url = await upload(file);
-               return url;
-            })
-         );
-         setUploading(false);
-         dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
-      } catch (err) {
-         console.log(err);
-         setUploading(false);
-      }
-   };
 
    const navigate = useNavigate();
    const queryClient = useQueryClient();
+   const toast = useToast();
+
+   // free preview URLs when the page closes
+   const photosRef = useRef(photos);
+   photosRef.current = photos;
+   useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
+
+   const set = (e) => {
+      setForm({ ...form, [e.target.name]: e.target.value });
+      setErrors({ ...errors, [e.target.name]: "" });
+   };
+
+   const addPhotos = (fileList) => {
+      const added = [...fileList]
+         .filter((f) => f.type.startsWith("image/"))
+         .map((file) => ({ file, url: URL.createObjectURL(file) }));
+      setPhotos((prev) => [...prev, ...added].slice(0, MAX_PHOTOS));
+      setErrors({ ...errors, photos: "" });
+   };
+   const removePhoto = (i) => {
+      URL.revokeObjectURL(photos[i].url);
+      setPhotos(photos.filter((_, idx) => idx !== i));
+   };
+
+   const addFeature = () => {
+      const value = featureText.trim();
+      if (value && !features.includes(value)) setFeatures([...features, value]);
+      setFeatureText("");
+   };
 
    const mutation = useMutation({
-      mutationFn: (gig) => {
-         return newRequest.post("/gigs/creategig", gig);
-      },
+      mutationFn: (gig) => newRequest.post("/gigs/creategig", gig),
       onSuccess: () => {
-         queryClient.invalidateQueries(["myGigs"]);
-         navigate("/gigs");
+         queryClient.invalidateQueries({ queryKey: ["myGigs"] });
+         queryClient.invalidateQueries({ queryKey: ["gigs"] });
+         toast({ title: "Service published", text: "Customers can now find and order it." });
+         navigate("/mygigs");
       },
-      onError: (error) => {
-         console.error("Failed to create gig:", error);
-         alert("Failed to create service. Please try again.");
-      },
+      onError: (err) => setSubmitError(getErrorMessage(err, "Failed to create service.")),
    });
 
-   const handleSubmit = (e) => {
-      e.preventDefault();
+   const checks = [
+      ["Title, category and city", form.title.trim() && form.category && form.country.trim()],
+      ["Description and business details", form.desc.trim() && form.shortTitle.trim() && form.shortDesc.trim()],
+      ["Price and delivery time", Number(form.price) > 0 && Number(form.deliveryTime) >= 1],
+      ["At least one photo", photos.length > 0],
+   ];
 
-      // Debug: Log the current state
-      console.log("Submitting state:", state);
-
-      // Basic validation
-      if (!state.title) {
-         alert("Please enter a title");
-         return;
-      }
-
-      if (!state.desc) {
-         alert("Please enter a description");
-         return;
-      }
-
-      if (!state.price) {
-         alert("Please enter a price");
-         return;
-      }
-
-      try {
-         mutation.mutate(state);
-         // navigate("/mygigs");
-      } catch (error) {
-         console.error("Error during mutation:", error);
-      }
+   const validate = () => {
+      const e = {};
+      if (!form.title.trim()) e.title = "Add a title.";
+      if (!form.category) e.category = "Choose a category.";
+      if (!form.country.trim()) e.country = "Choose your city.";
+      if (!form.desc.trim()) e.desc = "Describe your service.";
+      if (!form.shortTitle.trim()) e.shortTitle = "Add your business or shop name.";
+      if (!form.shortDesc.trim()) e.shortDesc = "Add a one line summary.";
+      if (!(Number(form.price) > 0)) e.price = "Enter a price above 0.";
+      if (!(Number(form.deliveryTime) >= 1)) e.deliveryTime = "At least 1 day.";
+      if (Number(form.revisionNumber) < 0) e.revisionNumber = "Can't be negative.";
+      if (!photos.length) e.photos = "Add at least one photo. The first one is the cover.";
+      return e;
    };
-   // console.log(state);
+
+   const handleSubmit = async (e) => {
+      e.preventDefault();
+      setSubmitError("");
+      const found = validate();
+      setErrors(found);
+      if (Object.keys(found).length) {
+         window.scrollTo({ top: 0, behavior: "smooth" });
+         return;
+      }
+      setUploading(true);
+      let urls;
+      try {
+         // photos upload only now, when publishing
+         urls = (await Promise.all(photos.map((p) => upload(p.file)))).filter(Boolean);
+      } catch (err) {
+         setUploading(false);
+         return setSubmitError(err.message);
+      }
+      setUploading(false);
+      mutation.mutate({
+         ...form,
+         title: form.title.trim(),
+         country: form.country.trim(),
+         price: Number(form.price),
+         deliveryTime: Number(form.deliveryTime),
+         revisionNumber: Number(form.revisionNumber) || 0,
+         features,
+         cover: urls[0],
+         images: urls,
+      });
+   };
+
+   const busy = uploading || mutation.isPending;
+
    return (
-      <div className="min-h-screen bg-theme-light flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 w-full text-md">
-         <div className="mt-6 text-4xl font-bold text-theme-dark mb-8">
-            <h1>Post a new Service / Hire a Group</h1>
-         </div>
-         <form onSubmit={handleSubmit}>
-            <div className="w-full max-w-5xl bg-white shadow-lg rounded-xl p-10 grid grid-cols-1 md:grid-cols-2 gap-3">
-               <div>
-                  <label className="block text-xl font-semibold text-theme-dark">
-                     Title
-                  </label>
-                  <input
-                     type="text"
-                     name="title"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="What you'll do."
-                     required
-                  />
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 pb-16 pt-9 sm:px-5">
+            <PageTitle title="Post a service" text="Fields marked * are required." />
+            {submitError && <Notice onClose={() => setSubmitError("")}>{submitError}</Notice>}
+            {Object.values(errors).some(Boolean) && (
+               <Notice>Some details are missing. Check the fields marked in red.</Notice>
+            )}
 
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Category
-                  </label>
-                  <select
-                     name="category"
-                     id="category"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     required>
-                     <option value="">Select a category</option>
-                     <option value="design">Design</option>
-                     <option value="Technicion">Technicion / Repair</option>
-                     <option value="Clothing">Clothing</option>
-                     <option value="Groceries">Groceries</option>
-                     <option value="Electronics">Electronics</option>
-                     <option value="Household">Household</option>
-                     <option value="Transport">Transport</option>
-                     <option value="Delievery">Delievery</option>
-                     <option value="GroupHiring">Group Hiring</option>
-                  </select>
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Cover Image
-                  </label>
-                  <input
-                     type="file"
-                     onChange={(e) => setSingleFile(e.target.files[0])}
-                     className="mt-5 block w-full border border-theme-accent shadow-sm p-3 rounded-lg"
-                     accept="image/*"
-                  />
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Upload Images
-                  </label>
-                  <input
-                     type="file"
-                     multiple
-                     onChange={(e) => setFiles(e.target.files)}
-                     className="mt-5 block w-full border border-theme-accent shadow-sm p-3 rounded-lg"
-                     accept="image/*"
-                  />
-                  <button
-                     type="button"
-                     className="mt-5 w-1/2 py-3 px-4 bg-theme-accent text-white rounded-md transition-all duration-300 transform hover:scale-103 hover:bg-theme-dark shadow-lg hover:shadow-xl"
-                     onClick={handleUpload}
-                     disabled={uploading}>
-                     {uploading ? "Uploading..." : "Upload"}
-                  </button>
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Description
-                  </label>
-                  <textarea
-                     name="desc"
-                     onChange={handleChange}
-                     rows="4"
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="Brief descriptions to introduce your Work."
-                     required></textarea>
-                  <label className="mt-5 block text-xl font-semibold text-theme-dark">
-                     City
-                  </label>
-                  <input
-                     type="text"
-                     name="country"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="City Name"
-                     required
-                  />
-               </div>
-
-               <div>
-                  <label className="block text-xl font-semibold text-theme-dark">
-                     Business / Shop Name
-                  </label>
-                  <input
-                     type="text"
-                     name="shortTitle"
-                     required
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="e.g. Chaudhary Transports & Goods"
-                  />
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Business Description
-                  </label>
-                  <textarea
-                     name="shortDesc"
-                     onChange={handleChange}
-                     required
-                     rows="3"
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="Describe your Business shortly."></textarea>
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Time (days)
-                  </label>
-                  <input
-                     type="number"
-                     name="deliveryTime"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     placeholder="How much time you'll take. e.g. 3"
-                     min="1"
-                  />
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Revision Number
-                  </label>
-                  <input
-                     type="number"
-                     name="revisionNumber"
-                     placeholder="No. of modifications(Service only)"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     min="0"
-                  />
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Add Features
-                  </label>
-                  <div onSubmit={handleFeature}>
-                     <div className="flex gap-2 mt-5">
-                        <input
-                           type="text"
-                           placeholder="Feature of your Service."
-                           className="block w-full rounded-lg border border-theme-accent shadow-sm p-3"
+            <div className="flex flex-col items-start gap-7 lg:flex-row">
+               <form onSubmit={handleSubmit} noValidate className="flex w-full min-w-0 flex-1 flex-col gap-5">
+                  <Step n={1} title="Basics">
+                     <Field
+                        label="Service title *"
+                        name="title"
+                        maxLength={80}
+                        placeholder="e.g. AC repair and gas refill at home"
+                        value={form.title}
+                        onChange={set}
+                        error={errors.title}
+                        hint={`Say what you do in a few words. ${form.title.length} / 80`}
+                     />
+                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <SelectField label="Category *" name="category" value={form.category} onChange={set} error={errors.category}>
+                           <option value="">Select a category</option>
+                           {SERVICE_CATEGORIES.map((c) => (
+                              <option key={c.value} value={c.value}>
+                                 {c.label}
+                              </option>
+                           ))}
+                        </SelectField>
+                        <Field
+                           label="City *"
+                           name="country"
+                           list="city-options"
+                           placeholder="e.g. Multan"
+                           value={form.country}
+                           onChange={set}
+                           error={errors.country}
                         />
-                        <button
-                           type="button"
-                           onClick={(e) => {
-                              const input = e.target.previousElementSibling;
-                              if (input.value.trim()) {
-                                 dispatch({
-                                    type: "ADD_FEATURE",
-                                    payload: input.value.trim(),
-                                 });
-                                 input.value = "";
-                              }
-                           }}
-                           className="py-3 px-4 bg-theme-accent text-white rounded-md transition-all duration-300 transform hover:scale-103 hover:bg-theme-dark shadow-lg hover:shadow-xl">
-                           Add
-                        </button>
+                        <datalist id="city-options">
+                           {CITIES.map((c) => (
+                              <option key={c} value={c} />
+                           ))}
+                        </datalist>
                      </div>
-                  </div>
-                  <div className="flex gap-2 mt-5 flex-wrap w-full">
-                     {state?.features?.map((f, index) => (
-                        <div
-                           className="flex gap-2 text-lg"
-                           key={`${f}-${index}`}>
-                           <button
-                              type="button"
-                              className="flex gap-2 justify-between py-1 px-2 bg-theme-accent text-white rounded-md transition-all duration-300 transform hover:scale-103 hover:bg-theme-dark shadow-lg hover:shadow-xl"
-                              onClick={() =>
-                                 dispatch({
-                                    type: "REMOVE_FEATURE",
-                                    payload: f,
-                                 })
-                              }>
-                              {f}
-                              <span className="text-red-800 hover:text-red-600 my-auto">
-                                 <X />
-                              </span>
+                  </Step>
+
+                  <Step n={2} title="Details">
+                     <TextAreaField
+                        label="Description *"
+                        name="desc"
+                        rows={4}
+                        placeholder="What you do, what customers get and anything they should know."
+                        value={form.desc}
+                        onChange={set}
+                        error={errors.desc}
+                     />
+                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field
+                           label="Business / shop name *"
+                           name="shortTitle"
+                           placeholder="e.g. Chaudhary Transports & Goods"
+                           value={form.shortTitle}
+                           onChange={set}
+                           error={errors.shortTitle}
+                        />
+                        <Field
+                           label="One line summary *"
+                           name="shortDesc"
+                           placeholder="e.g. Same day home visits"
+                           value={form.shortDesc}
+                           onChange={set}
+                           error={errors.shortDesc}
+                        />
+                     </div>
+                     <div className="flex flex-col gap-2">
+                        <label htmlFor="feature" className="text-sm font-semibold">
+                           What's included
+                        </label>
+                        <div className="flex gap-2">
+                           <input
+                              id="feature"
+                              value={featureText}
+                              onChange={(e) => setFeatureText(e.target.value)}
+                              onKeyDown={(e) => {
+                                 if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    addFeature();
+                                 }
+                              }}
+                              placeholder="Add an item and press Enter"
+                              className="h-11 min-w-0 flex-1 rounded-[10px] border border-line-strong px-3.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-peach"
+                           />
+                           <button type="button" onClick={addFeature} className={`${btn.small} border-ink`}>
+                              Add
                            </button>
                         </div>
+                        {features.length > 0 && (
+                           <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                              {features.map((f) => (
+                                 <li key={f} className="flex h-[34px] items-center gap-1 rounded-full bg-blush pl-3 pr-1 text-sm">
+                                    {f}
+                                    <button
+                                       type="button"
+                                       aria-label={`Remove ${f}`}
+                                       onClick={() => setFeatures(features.filter((x) => x !== f))}
+                                       className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white">
+                                       <X size={14} />
+                                    </button>
+                                 </li>
+                              ))}
+                           </ul>
+                        )}
+                     </div>
+                  </Step>
+
+                  <Step n={3} title="Price & delivery">
+                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <Field label="Price (Rs.) *" name="price" type="number" min="1" value={form.price} onChange={set} error={errors.price} />
+                        <Field
+                           label="Delivery time (days) *"
+                           name="deliveryTime"
+                           type="number"
+                           min="1"
+                           value={form.deliveryTime}
+                           onChange={set}
+                           error={errors.deliveryTime}
+                        />
+                        <Field
+                           label="Free revisions"
+                           name="revisionNumber"
+                           type="number"
+                           min="0"
+                           placeholder="0"
+                           value={form.revisionNumber}
+                           onChange={set}
+                           error={errors.revisionNumber}
+                        />
+                     </div>
+                  </Step>
+
+                  <Step n={4} title="Photos *">
+                     <label
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                           e.preventDefault();
+                           addPhotos(e.dataTransfer.files);
+                        }}
+                        className={`flex cursor-pointer flex-col items-center gap-2 rounded-[14px] border-2 border-dashed bg-cream p-7 text-center focus-within:ring-2 focus-within:ring-peach ${
+                           errors.photos ? "border-danger" : "border-line-strong"
+                        }`}>
+                        <Upload size={28} className="text-muted" aria-hidden="true" />
+                        <strong className="text-[15px]">Drop photos here or browse</strong>
+                        <span className="text-[13px] text-muted">
+                           Up to {MAX_PHOTOS} images. The first one is your cover. They upload when you publish.
+                        </span>
+                        <input
+                           type="file"
+                           multiple
+                           accept="image/*"
+                           onChange={(e) => {
+                              addPhotos(e.target.files);
+                              e.target.value = "";
+                           }}
+                           className="sr-only"
+                        />
+                     </label>
+                     {errors.photos && <span className="text-[13px] text-[#8e1f17]">{errors.photos}</span>}
+                     {photos.length > 0 && (
+                        <ul className="m-0 flex list-none flex-wrap gap-2.5 p-0">
+                           {photos.map((p, i) => (
+                              <li key={p.url} className="relative">
+                                 <img src={p.url} alt="" className="h-[88px] w-[120px] rounded-[10px] object-cover" />
+                                 {i === 0 && (
+                                    <Badge tone="dark" className="absolute left-1.5 top-1.5">
+                                       Cover
+                                    </Badge>
+                                 )}
+                                 <button
+                                    type="button"
+                                    onClick={() => removePhoto(i)}
+                                    aria-label={`Remove photo ${i + 1}`}
+                                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white text-ink shadow">
+                                    <X size={14} />
+                                 </button>
+                              </li>
+                           ))}
+                        </ul>
+                     )}
+                  </Step>
+
+                  <div className="flex justify-end gap-2.5">
+                     <Link to="/mygigs" className={btn.secondary}>
+                        Cancel
+                     </Link>
+                     <button type="submit" disabled={busy} className={btn.primary}>
+                        {uploading ? "Uploading photos..." : mutation.isPending ? "Publishing..." : "Publish service"}
+                     </button>
+                  </div>
+               </form>
+
+               <aside aria-label="Preview" className="flex w-full shrink-0 flex-col gap-3.5 lg:sticky lg:top-24 lg:w-[340px]">
+                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted">Live preview</span>
+                  <div className="overflow-hidden rounded-2xl border border-line bg-white">
+                     {photos[0] ? (
+                        <img src={photos[0].url} alt="" className="h-40 w-full object-cover" />
+                     ) : (
+                        <div className="h-40 bg-sand" />
+                     )}
+                     <div className="flex flex-col gap-2 p-4">
+                        <span className="text-sm text-muted">
+                           <strong className="text-ink">{form.shortTitle || "Your business"}</strong>
+                           {form.country && ` · ${form.country}`}
+                        </span>
+                        <span className="text-[17px] font-semibold">{form.title || "Your service title"}</span>
+                        {form.category && <span className="text-sm text-muted">{categoryLabel(form.category)}</span>}
+                        <span className="flex items-center justify-between border-t border-[#f0e3d9] pt-2">
+                           <Badge tone="info">New</Badge>
+                           <strong className="text-lg">{form.price ? formatPrice(form.price) : "Rs. …"}</strong>
+                        </span>
+                     </div>
+                  </div>
+                  <div className="flex flex-col gap-2.5 rounded-2xl border border-line bg-white p-4">
+                     <strong className="text-[15px]">Before you publish</strong>
+                     {checks.map(([label, ok]) => (
+                        <span key={label} className="flex items-center gap-2.5 text-sm">
+                           <span
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                                 ok ? "bg-success text-white" : "border-2 border-line-strong"
+                              }`}>
+                              {ok && <Check size={12} strokeWidth={3.5} aria-hidden="true" />}
+                           </span>
+                           {label}
+                        </span>
                      ))}
                   </div>
-
-                  <label className="block mt-8 text-xl font-semibold text-theme-dark">
-                     Price (Rs. )
-                  </label>
-                  <input
-                     type="number"
-                     name="price"
-                     onChange={handleChange}
-                     className="mt-5 block w-full rounded-lg border border-theme-accent shadow-sm p-3"
-                     min="1"
-                     step="0.01"
-                     required
-                  />
-               </div>
-
-               <div className="md:col-span-2 flex justify-start">
-                  <button
-                     type="submit"
-                     disabled={mutation.isLoading}
-                     className="w-full mt-8 px-5 py-3 bg-theme-accent text-white rounded-lg text-xl font-bold hover:bg-theme-dark transition disabled:opacity-50 disabled:cursor-not-allowed">
-                     {mutation.isLoading ? "Creating..." : "Create"}
-                  </button>
-               </div>
+               </aside>
             </div>
-         </form>
+         </div>
       </div>
    );
 };

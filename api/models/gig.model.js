@@ -20,6 +20,7 @@ const GigSchema = new Schema(
       },
       price: {
          type: Number,
+         min: [0, "Price can't be negative"],
       },
       category: {
          type: String,
@@ -57,9 +58,11 @@ const GigSchema = new Schema(
       deliveryTime: {
          type: Number,
          required: true,
+         min: [1, "Delivery time must be at least 1 day"],
       },
       revisionNumber: {
          type: Number,
+         min: [0, "Revisions can't be negative"],
          // required: true,
       },
       features: {

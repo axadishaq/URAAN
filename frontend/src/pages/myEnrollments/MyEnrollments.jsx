@@ -1,101 +1,74 @@
-import React, { useEffect, useState } from "react";
-import newRequest from "../../utils/newRequest";
+import React from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import moment from "moment";
+import newRequest, { getErrorMessage } from "../../utils/newRequest";
+import { getCurrentUser } from "../../utils/currentUser";
+import { categoryLabel } from "../../utils/categories";
+import { Badge, EmptyState, Notice, PageTitle, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
 
 function MyEnrollments() {
-   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-   const [courses, setCourses] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
+   const currentUser = getCurrentUser();
 
-   useEffect(() => {
-      const fetchEnrollments = async () => {
-         try {
-            // Get all enrollments for the current user
-            const enrollmentsRes = await newRequest.get(
-               `/enrollments/user/${currentUser._id}`
-            );
-            const enrollments = enrollmentsRes.data;
-
-            // Fetch course details for each enrollment
-            const coursePromises = enrollments.map((enroll) =>
-               newRequest
-                  .get(`/courses/${enroll.courseId}`)
-                  .then((res) => res.data)
-            );
-            const coursesData = await Promise.all(coursePromises);
-            setCourses(coursesData);
-         } catch (err) {
-            setError("Failed to load enrolled courses.");
-         }
-         setLoading(false);
-      };
-      if (currentUser?._id) fetchEnrollments();
-   }, [currentUser]);
+   // One request returns each enrollment with its course attached
+   const { isLoading, error, data } = useQuery({
+      queryKey: ["enrollments", currentUser?._id],
+      queryFn: () => newRequest.get("/enrollments/me").then((res) => res.data),
+      enabled: !!currentUser,
+   });
+   const enrollments = data || [];
 
    return (
-      <>
-         {courses && courses.length === 0 ? null : (
-            <div className="bg-theme-light min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-               <div className="max-w-7xl mx-auto">
-                  <h1 className="text-4xl font-semibold text-theme-dark mb-6">
-                     My Enrolled Courses
-                  </h1>
-                  {loading ? (
-                     <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                        <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                           <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                        </div>
-                     </div>
-                  ) : error ? (
-                     <div className="text-red-500">{error}</div>
-                  ) : (
-                     <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="bg-theme-dark text-white p-4 flex items-center justify-between">
-                           <h2 className="text-xl font-semibold">
-                              Enrolled Courses
-                           </h2>
-                        </div>
-                        <div className="divide-y divide-gray-300">
-                           {courses && courses.length > 0 ? (
-                              courses.map((course) => (
-                                 <div
-                                    key={course._id}
-                                    className="p-2 px-8 flex flex-wrap justify-between items-center hover:bg-theme-light transition-all ">
-                                    <div className="flex gap-2">
-                                       <img
-                                          src={course.coverImage}
-                                          alt="Course"
-                                          className="w-28 h-16 rounded object-cover"
-                                       />
-                                       <div className="flex flex-col justify-center">
-                                          <h4 className="text-theme-dark font-semibold">
-                                             {course.title}
-                                          </h4>
-                                          <p className="text-theme-medium text-sm">
-                                             Category: {course.category}
-                                          </p>
-                                          <p className="text-theme-medium text-sm">
-                                             Level: {course.level}
-                                          </p>
-                                       </div>
-                                    </div>
-                                    <div className="rounded-lg hidden sm:block">
-                                       <p>RS. {course.price}</p>
-                                    </div>
-                                 </div>
-                              ))
-                           ) : (
-                              <div className="p-4 text-center text-theme-medium">
-                                 No enrolled courses found.
-                              </div>
-                           )}
-                        </div>
-                     </div>
-                  )}
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pb-14 pt-9 sm:px-5">
+            <PageTitle
+               title="My learning"
+               text="Courses you have enrolled in."
+               action={
+                  <Link to="/orders" className={btn.secondary}>
+                     View my orders
+                  </Link>
+               }
+            />
+            {isLoading ? (
+               <Spinner label="Loading courses" />
+            ) : error ? (
+               <Notice>{getErrorMessage(error, "Failed to load enrolled courses.")}</Notice>
+            ) : enrollments.length === 0 ? (
+               <div className="rounded-2xl border border-line bg-white">
+                  <EmptyState
+                     title="No enrolled courses yet"
+                     text="Learn a new skill from providers in your city."
+                     action={
+                        <Link to="/courses" className={btn.primary}>
+                           Browse courses
+                        </Link>
+                     }
+                  />
                </div>
-            </div>
-         )}
-      </>
+            ) : (
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {enrollments.map(({ _id, course, createdAt }) => (
+                     <Link
+                        key={_id}
+                        to={`/courses/${course._id}`}
+                        className="flex gap-3.5 rounded-[14px] border border-line bg-white p-3.5 text-ink hover:shadow-[0_8px_24px_rgba(43,13,7,0.08)]">
+                        <Picture src={course.coverImage} alt="" className="h-[72px] w-24 shrink-0 rounded-[10px]" />
+                        <span className="flex min-w-0 flex-col gap-1">
+                           <span className="flex flex-wrap gap-1.5">
+                              <Badge>{course.level}</Badge>
+                              <Badge tone="outline">{categoryLabel(course.category)}</Badge>
+                           </span>
+                           <strong className="truncate">{course.title}</strong>
+                           <span className="text-[13px] text-muted">Enrolled {moment(createdAt).format("D MMM YYYY")}</span>
+                        </span>
+                     </Link>
+                  ))}
+               </div>
+            )}
+         </div>
+      </div>
    );
 }
 

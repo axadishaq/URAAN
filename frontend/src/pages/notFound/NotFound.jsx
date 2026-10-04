@@ -1,26 +1,25 @@
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { btn } from "../../components/ui/styles";
 
 export default function NotFound() {
    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-theme-bg text-theme-foreground">
-         <div className="flex-col gap-4 w-full h-auto flex items-center justify-center">
-            <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-               <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-            </div>
-         </div>
-
-         <h1 className="text-4xl font-extrabold mb-4 text-theme-accent drop-shadow-lg">
-            Page Not Found !
-         </h1>
-         <p className="text-xl text-theme-dark mb-12 max-w-96 text-center ">
-            Sorry, the page you are looking for does not exist or has been
-            moved.
-         </p>
-         <Link
-            to="/"
-            className="px-8 py-3 rounded-xl bg-theme-accent text-white font-semibold shadow hover:bg-theme-accent-dark transition ">
-            Go Home
+      <div className="hero-pattern flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
+         <Link to="/" className="flex items-center gap-2.5 text-ink">
+            <img src="/uraan.png" alt="" className="h-12 w-12 rounded-xl bg-white object-contain p-1" />
+            <span className="font-display text-2xl font-bold">URAAN</span>
          </Link>
+         <h1 className="m-0 font-display text-4xl font-bold sm:text-5xl">Page Not Found</h1>
+         <p className="m-0 max-w-md text-lg text-muted">
+            Sorry, the page you are looking for does not exist or has been moved.
+         </p>
+         <div className="flex flex-wrap justify-center gap-2.5">
+            <Link to="/" className={btn.primary}>
+               Go Home
+            </Link>
+            <Link to="/gigs" className={btn.secondary}>
+               Browse services
+            </Link>
+         </div>
       </div>
    );
 }

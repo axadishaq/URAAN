@@ -1,125 +1,108 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import newRequest from "../../utils/newRequest";
+import { Plus, Star } from "lucide-react";
+import newRequest, { getErrorMessage } from "../../utils/newRequest";
+import { getCurrentUser } from "../../utils/currentUser";
+import { categoryLabel } from "../../utils/categories";
+import { formatPrice, ratingText } from "../../utils/format";
+import { EmptyState, Notice, PageTitle, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
 
 function MyGigs() {
-   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+   const currentUser = getCurrentUser();
    const queryClient = useQueryClient();
+   const toast = useToast();
 
    const { isLoading, error, data } = useQuery({
-      queryKey: ["myGigs"],
-      queryFn: () =>
-         newRequest.get(`/gigs?userId=${currentUser._id}`).then((res) => {
-            return res.data;
-         }),
+      queryKey: ["myGigs", currentUser?._id],
+      queryFn: () => newRequest.get(`/gigs?userId=${currentUser._id}&sort=createdAt`).then((res) => res.data),
    });
-   // console.log(currentUser._id);
 
-   // tanstack mutation
    const mutation = useMutation({
-      mutationFn: (id) => {
-         return newRequest.delete(`/gigs/${id}`);
+      mutationFn: (gig) => newRequest.delete(`/gigs/${gig._id}`),
+      onSuccess: (_, gig) => {
+         queryClient.invalidateQueries({ queryKey: ["myGigs"] });
+         queryClient.invalidateQueries({ queryKey: ["gigs"] });
+         toast({ title: "Service deleted", text: `"${gig.title}" was removed.` });
       },
-      onSuccess: () => {
-         queryClient.invalidateQueries(["myGigs"]);
-      },
+      onError: (err) => toast({ type: "error", title: "Could not delete the service", text: getErrorMessage(err) }),
    });
 
-   const handleDelete = (id) => {
-      if (!window.confirm("Are you sure you want to delete this gig?")) return;
-      mutation.mutate(id);
-      alert("Deleted Successfully!");
+   const handleDelete = (gig) => {
+      if (window.confirm(`Delete "${gig.title}"? This can't be undone.`)) mutation.mutate(gig);
    };
 
+   const gigs = data || [];
+
    return (
-      <>
-         <div className="bg-theme-light min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-            {isLoading ? (
-               <>
-                  <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                     <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                        <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                     </div>
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pb-14 pt-9 sm:px-5">
+            <PageTitle
+               title="My services"
+               text="Services you offer on URAAN."
+               action={
+                  <Link to="/add" className={btn.primary}>
+                     <Plus size={18} aria-hidden="true" />
+                     Post a service
+                  </Link>
+               }
+            />
+            <section className="overflow-hidden rounded-2xl border border-line bg-white">
+               {isLoading ? (
+                  <Spinner label="Loading services" />
+               ) : error ? (
+                  <div className="p-4">
+                     <Notice>{getErrorMessage(error)}</Notice>
                   </div>
-               </>
-            ) : error ? (
-               "Something went Wrong!"
-            ) : (
-               <div className="max-w-7xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
-                     <h1 className="text-4xl font-semibold text-theme-dark">
-                        My Servies
-                     </h1>
-                     <Link
-                        to={"/add"}
-                        className="bg-theme-dark hover:bg-theme-dark/90 text-white px-4 py-2 rounded-lg transition-colors">
-                        + Create New Service
-                     </Link>
-                  </div>
-
-                  <div className="h-auto">
-                     <div className="bg-theme-light min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-                        <div className="max-w-7xl mx-auto">
-                           <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                              {/* Header */}
-                              <div className="bg-theme-dark text-white p-4 flex items-center justify-between">
-                                 <h2 className="text-xl font-semibold">
-                                    Services
-                                 </h2>
-                              </div>
-                              {/* List */}
-
-                              <div className="divide-y divide-gray-300">
-                                 {data && data.length > 0 ? (
-                                    data.map((gig) => (
-                                       <div
-                                          key={gig._id}
-                                          className="p-2 px-8 flex flex-wrap justify-between items-center hover:bg-theme-light transition-all ">
-                                          {/* ...existing gig display code... */}
-                                          <div className="flex gap-2">
-                                             <img
-                                                src={gig.cover}
-                                                alt="Service"
-                                                className="w-28 h-16 rounded object-cover"
-                                             />
-                                             <div className="flex flex-col justify-center">
-                                                <h4 className="text-theme-dark font-semibold">
-                                                   {gig.title}
-                                                </h4>
-                                                <p className="text-theme-medium text-sm">
-                                                   Sales : {gig.sales}
-                                                </p>
-                                             </div>
-                                          </div>
-                                          <div className=" rounded-lg  hidden sm:block">
-                                             <p>RS. {gig.price}</p>
-                                          </div>
-                                          <div>
-                                             <button
-                                                onClick={() =>
-                                                   handleDelete(gig._id)
-                                                }
-                                                className="p-2 px-6 bg-theme-accent rounded-lg text-white hover:border  border-theme-medium">
-                                                Delete
-                                             </button>
-                                          </div>
-                                       </div>
-                                    ))
+               ) : gigs.length === 0 ? (
+                  <EmptyState
+                     title="No services yet"
+                     text="Post your first service so customers in your city can find you."
+                     action={
+                        <Link to="/add" className={btn.primary}>
+                           Post a service
+                        </Link>
+                     }
+                  />
+               ) : (
+                  <ul className="m-0 list-none p-0">
+                     {gigs.map((gig) => (
+                        <li key={gig._id} className="flex flex-wrap items-center gap-4 border-b border-[#f0e3d9] px-5 py-4 last:border-b-0">
+                           <Picture src={gig.cover} alt="" className="h-16 w-[88px] shrink-0 rounded-[10px]" />
+                           <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+                              <Link to={`/gig/${gig._id}`} className="font-semibold text-ink hover:underline">
+                                 {gig.title}
+                              </Link>
+                              <span className="text-sm text-muted">
+                                 {categoryLabel(gig.category)} · {gig.sales || 0} orders ·{" "}
+                                 {gig.starNumber > 0 ? (
+                                    <span className="inline-flex items-center gap-1">
+                                       <Star size={13} className="fill-[#e0a100] text-[#e0a100]" aria-hidden="true" />
+                                       {ratingText(gig)}
+                                    </span>
                                  ) : (
-                                    <div className="p-4 text-center text-theme-medium">
-                                       No gigs found.
-                                    </div>
+                                    "No reviews yet"
                                  )}
-                              </div>
+                              </span>
                            </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            )}
+                           <span className="w-24 text-right font-bold">{formatPrice(gig.price)}</span>
+                           <div className="flex gap-2">
+                              <Link to={`/gig/${gig._id}`} className={btn.small}>
+                                 View
+                              </Link>
+                              <button type="button" onClick={() => handleDelete(gig)} disabled={mutation.isPending} className={btn.danger}>
+                                 Delete
+                              </button>
+                           </div>
+                        </li>
+                     ))}
+                  </ul>
+               )}
+            </section>
          </div>
-      </>
+      </div>
    );
 }
 

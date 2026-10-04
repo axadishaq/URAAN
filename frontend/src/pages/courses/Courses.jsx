@@ -1,148 +1,78 @@
-import React, { useEffect, useState } from "react";
-import newRequest from "../../utils/newRequest.js";
-import { Link, useLocation } from "react-router";
+import React from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import newRequest, { getErrorMessage } from "../../utils/newRequest.js";
+import { COURSE_LEVELS } from "../../utils/categories";
+import CourseCard from "../../components/courseCard/CourseCard";
+import { EmptyState, Notice, PageTitle } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
 
 const Courses = () => {
-   const [courses, setCourses] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState(null);
+   const [params] = useSearchParams();
+   const level = params.get("level") || "";
 
-   const location = useLocation();
-   const params = new URLSearchParams(location.search);
-   const level = params.get("level");
+   const { isLoading, error, data } = useQuery({
+      queryKey: ["courses", level],
+      queryFn: () =>
+         newRequest.get("/courses", { params: level ? { level } : {} }).then((res) => res.data),
+   });
+   const courses = data || [];
 
-   useEffect(() => {
-      const fetchCourses = async () => {
-         try {
-            const res = await newRequest.get("/courses");
-            let data = res.data;
-            if (level) {
-               data = data.filter((course) => course.level === level);
-            }
-            setCourses(data);
-         } catch (err) {
-            setError(err.message);
-         } finally {
-            setLoading(false);
-         }
-      };
-      fetchCourses();
-   }, [level]);
-
-   // const [courses, setCourses] = useState([]);
-   // const [loading, setLoading] = useState(true);
-   // const [error, setError] = useState(null);
-
-   // const fetchCourses = async () => {
-   //    try {
-   //       const res = await axios.get("http://localhost:8800/api/courses");
-   //       setCourses(res.data);
-   //    } catch (err) {
-   //       setError(err.message);
-   //    } finally {
-   //       setLoading(false);
-   //    }
-   // };
-   // useEffect(() => {
-   //    fetchCourses();
-   // }, []);
-
-   if (loading)
-      return (
-         <>
-            {/* Loader  */}
-            <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-               <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                  <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-               </div>
-            </div>
-         </>
-      );
-   if (error) return <div>Error: {error}</div>;
+   const tab = (on) =>
+      `flex h-10 items-center rounded-[9px] px-4 text-sm font-semibold ${
+         on ? "bg-ink text-white" : "text-ink hover:bg-white"
+      }`;
 
    return (
-      <>
-         <section className="py-16 bg-gray-50">
-            <div className="container mx-auto px-4 md:px-8">
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {/* <!-- Job Card 2 --> */}
-                  {courses.map((course) => (
-                     <div
-                        key={course._id}
-                        className="bg-white p-6 rounded-xl shadow-lg hover:shadow-lg/30 hover:-translate-y-2  transition-all duration-500">
-                        <div>
-                           <div className="flex gap-2">
-                              <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-                                 {course.level}
-                              </span>
-                              {/* <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-                                 {course.owner?.country}
-                              </span> */}
-                           </div>
-                        </div>
-                        <div className="flex items-start justify-arround item-center mb-4 mt-4">
-                           <div className="w-12 h-12 bg-gray-100 rounded-md my-auto">
-                              <img
-                                 src={course.coverImage || "/img/avatar.png"}
-                                 alt="course"
-                                 className="w-full h-full rounded-md"
-                              />
-                           </div>
-                           <h3 className="font-semibold text-xl m-2">
-                              {course.title}
-                           </h3>
-                        </div>
-                        <div className="flex items-center text-theme-medium mb-3">
-                           <span>
-                              {course?.description?.substring(0, 100)}
-                              ...
-                           </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                           <span className="bg-gray-100 text-theme-medium px-3 py-1 rounded-full text-sm">
-                              {course.category}
-                           </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                           <span className="font-semibold text-theme-medium">
-                              Rs. {course.price}
-                           </span>
-                        </div>
-                        <div className="flex justify-center items-center  text-white rounded-lg mt-4 p-2 border-3 transition-all duration-500 bg-theme-dark font-bold  hover:bg-theme-light hover:border-amber-900 hover:text-theme-dark">
-                           <Link to={`/courses/${course._id}`} className=" ">
-                              Enroll Now
-                           </Link>
-                        </div>
-                     </div>
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1200px] flex-col gap-7 px-4 pb-16 pt-9 sm:px-5">
+            <PageTitle
+               title={level ? `${level} courses` : "Courses"}
+               text="Short skill courses taught by providers on URAAN."
+               action={
+                  <nav aria-label="Course level" className="flex flex-wrap gap-1.5 rounded-xl bg-[#f0e3d9] p-1">
+                     <Link to="/courses" aria-current={!level ? "page" : undefined} className={tab(!level)}>
+                        All
+                     </Link>
+                     {COURSE_LEVELS.map((l) => (
+                        <Link key={l} to={`/courses?level=${l}`} aria-current={level === l ? "page" : undefined} className={tab(level === l)}>
+                           {l}
+                        </Link>
+                     ))}
+                  </nav>
+               }
+            />
+            {error ? (
+               <Notice>{getErrorMessage(error)}</Notice>
+            ) : isLoading ? (
+               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((n) => (
+                     <div key={n} className="h-80 animate-pulse rounded-2xl bg-white" />
                   ))}
                </div>
-            </div>
-         </section>
-         {/* <div>
-            <h2>All Courses</h2>
-            {courses.length === 0 ? (
-               <p>No courses found.</p>
+            ) : courses.length === 0 ? (
+               <div className="rounded-2xl border border-line bg-white">
+                  <EmptyState
+                     title={`No ${level ? `${level} ` : ""}courses found.`}
+                     text="Check back soon, or see all levels."
+                     action={
+                        level ? (
+                           <Link to="/courses" className={btn.secondary}>
+                              Show all courses
+                           </Link>
+                        ) : null
+                     }
+                  />
+               </div>
             ) : (
-               <ul>
+               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                   {courses.map((course) => (
-                     <li key={course._id}>
-                        <h3>{course.title}</h3>
-                        <p>{course.description}</p>
-                        <p>
-                           <strong>Category:</strong> {course.category}
-                        </p>
-                        <p>
-                           <strong>Level:</strong> {course.level}
-                        </p>
-                        <p>
-                           <strong>Price:</strong> ${course.price}
-                        </p>
-                     </li>
+                     <CourseCard key={course._id} course={course} />
                   ))}
-               </ul>
+               </div>
             )}
-         </div> */}
-      </>
+         </div>
+      </div>
    );
 };
 

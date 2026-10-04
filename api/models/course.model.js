@@ -22,6 +22,7 @@ const CourseSchema = new Schema(
       price: {
          type: Number,
          required: true,
+         min: [0, "Price can't be negative"],
       },
 
       category: {

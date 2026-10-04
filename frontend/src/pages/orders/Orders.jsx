@@ -1,147 +1,212 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import newRequest from "../../utils/newRequest.js";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageCircle } from "lucide-react";
 import moment from "moment";
 
+import newRequest, { getErrorMessage } from "../../utils/newRequest.js";
+import { getCurrentUser } from "../../utils/currentUser";
+import { dueInfo, formatPrice } from "../../utils/format";
+import { Badge, EmptyState, Notice, PageTitle, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
+
+const TABS = ["All", "Pending", "Completed"];
+
+const OrderRow = ({ order, me, onMessage, onComplete, completing }) => {
+   const iAmSeller = order.sellerId === me;
+   const otherId = iAmSeller ? order.buyerId : order.sellerId;
+   const { data: other } = useQuery({
+      queryKey: ["user", otherId],
+      queryFn: () => newRequest.get(`/users/${otherId}`).then((res) => res.data),
+   });
+   const due = dueInfo(order);
+
+   return (
+      <li className="flex flex-wrap items-center gap-4 border-b border-[#f0e3d9] px-5 py-4 last:border-b-0">
+         <Picture src={order.img} alt="" className="h-16 w-[88px] shrink-0 rounded-[10px]" />
+         <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+            <Link to={`/gig/${order.gigId}`} className="text-base font-semibold text-ink hover:underline">
+               {order.title}
+            </Link>
+            <span className="text-sm text-muted">
+               {iAmSeller ? "Customer" : "Provider"}: {other?.username || "…"} · Ordered{" "}
+               {moment(order.createdAt).format("D MMM YYYY")}
+            </span>
+         </div>
+         <span className={`text-sm font-semibold ${due.late ? "text-danger" : "text-muted"}`}>{due.text}</span>
+         <Badge tone={order.isCompleted ? "done" : "pending"}>{order.isCompleted ? "Completed" : "Pending"}</Badge>
+         <span className="w-24 text-right text-base font-bold">{formatPrice(order.price)}</span>
+         <div className="flex gap-2">
+            <button
+               type="button"
+               onClick={() => onMessage(otherId)}
+               aria-label={`Message ${other?.username || ""}`}
+               className={btn.small}>
+               <MessageCircle size={16} aria-hidden="true" />
+               Message
+            </button>
+            {iAmSeller && !order.isCompleted && (
+               <button
+                  type="button"
+                  disabled={completing}
+                  onClick={() => onComplete(order)}
+                  className={btn.success}>
+                  Mark complete
+               </button>
+            )}
+            {!iAmSeller && order.isCompleted && (
+               <Link to={`/gig/${order.gigId}`} className={btn.smallDark}>
+                  Leave a review
+               </Link>
+            )}
+         </div>
+      </li>
+   );
+};
+
 const Orders = () => {
-   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+   const currentUser = getCurrentUser();
+   const me = currentUser?._id;
+   const [tab, setTab] = useState("All");
+   const [side, setSide] = useState(currentUser?.isSeller ? "selling" : "buying");
+   const [actionError, setActionError] = useState("");
 
    const navigate = useNavigate();
+   const queryClient = useQueryClient();
+   const toast = useToast();
 
    const { isLoading, error, data } = useQuery({
-      queryKey: ["orders", currentUser._id],
-      queryFn: () =>
-         newRequest.get(`/orders`).then((res) => {
-            // console.log(res.data);
-            return res.data;
-         }),
+      queryKey: ["orders", me],
+      queryFn: () => newRequest.get(`/orders`).then((res) => res.data),
+      enabled: !!me,
    });
 
-   const handleContact = async (order) => {
-      const sellerId = order.sellerId;
-      const buyerId = order.buyerId;
-      const id = sellerId + buyerId;
+   const completeMutation = useMutation({
+      mutationFn: (order) => newRequest.put(`/orders/${order._id}/complete`),
+      onSuccess: (_, order) => {
+         queryClient.invalidateQueries({ queryKey: ["orders"] });
+         toast({ title: "Order completed", text: `"${order.title}" is marked as delivered.` });
+      },
+      onError: (err) => setActionError(getErrorMessage(err)),
+   });
 
+   const handleMessage = async (otherId) => {
+      setActionError("");
       try {
-         const res = await newRequest.get(`/conversations/single/${id}`);
+         // creates the conversation, or returns the existing one
+         const res = await newRequest.post(`/conversations`, { to: otherId });
          navigate(`/message/${res.data.id}`);
       } catch (err) {
-         console.log(err);
-         if (err.response.status === 404);
-         const res = await newRequest.post(`/conversations`, {
-            to: currentUser.isSeller ? buyerId : sellerId,
-         });
-         navigate(`/message/${res.data.id}`);
+         setActionError(getErrorMessage(err, "Could not open the chat."));
       }
    };
 
+   const handleComplete = (order) => {
+      if (window.confirm(`Mark "${order.title}" as completed?`)) completeMutation.mutate(order);
+   };
+
+   const all = data || [];
+   const selling = all.filter((o) => o.sellerId === me);
+   const buying = all.filter((o) => o.buyerId === me);
+   const list = side === "selling" ? selling : buying;
+   const matches = (o, name) => name === "All" || (name === "Completed" ? o.isCompleted : !o.isCompleted);
+   const rows = list.filter((o) => matches(o, tab));
+   const showSwitch = currentUser?.isSeller || selling.length > 0;
+
+   const seg = (on) =>
+      `h-10 rounded-[9px] px-[18px] text-[15px] font-semibold ${
+         on ? "bg-white text-ink shadow-[0_1px_2px_rgba(43,13,7,0.1)]" : "text-muted hover:text-ink"
+      }`;
+
    return (
-      <>
-         <div className="h-auto">
-            <div className="bg-theme-light h-auto py-8 px-4 sm:px-6 lg:px-8">
-               <div className="max-w-7xl mx-auto">
-                  <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                     {/* Header */}
-                     <div className="bg-theme-dark text-white p-4 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">Orders</h2>
-                     </div>
-
-                     {/* Filter Tabs */}
-                     <div className="flex border-b border-gray-200 text-sm font-medium">
-                        <button className="flex-1 text-center py-3 px-4 border-b-2 border-theme-accent text-theme-dark hover:text-theme-dark hover:bg-theme-light">
-                           All
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pb-14 pt-9 sm:px-5">
+            <PageTitle
+               title="Orders"
+               text={showSwitch ? "Track what you bought and what customers ordered from you." : "Track the services you ordered."}
+               action={
+                  showSwitch && (
+                     <div role="group" aria-label="Show orders" className="flex gap-1 rounded-xl bg-[#f0e3d9] p-1">
+                        <button type="button" aria-pressed={side === "selling"} onClick={() => { setSide("selling"); setTab("All"); }} className={seg(side === "selling")}>
+                           Selling ({selling.length})
                         </button>
-                        <button className="flex-1 text-center py-3 px-4 text-theme-accent hover:text-theme-dark hover:bg-theme-light">
-                           Pending
-                        </button>
-                        <button className="flex-1 text-center py-3 px-4 text-theme-accent hover:text-theme-dark hover:bg-theme-light">
-                           Completed
+                        <button type="button" aria-pressed={side === "buying"} onClick={() => { setSide("buying"); setTab("All"); }} className={seg(side === "buying")}>
+                           Buying ({buying.length})
                         </button>
                      </div>
+                  )
+               }
+            />
 
-                     {isLoading ? (
-                        <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                           <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                              <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                           </div>
-                        </div>
-                     ) : error ? (
-                        <div className="text-red-600">
-                           {error.message || "Something went wrong!"}
-                        </div>
-                     ) : (
-                        <>
-                           {/* Orders List */}
-                           <div className="divide-y divide-gray-300">
-                              {/* Order Item */}
-                              {data && data.length > 0 ? (
-                                 data.map((order) => (
-                                    <div
-                                       key={order._id}
-                                       className="p-2 px-8 flex flex-wrap justify-between items-center hover:bg-theme-light transition-all ">
-                                       <div className="flex gap-2">
-                                          <img
-                                             src={order.img}
-                                             alt="Service"
-                                             className="w-28 h-16 rounded object-cover"
-                                          />
-                                          <div className="flex flex-col justify-center">
-                                             <h4 className="text-theme-dark font-semibold">
-                                                {order.title}
-                                             </h4>
-                                             <p className="text-theme-medium text-sm">
-                                                Due:{" "}
-                                                {moment(order.createdAt)
-                                                   .add(
-                                                      Number(
-                                                         order.deliveryTime
-                                                      ),
-                                                      "days"
-                                                   )
-                                                   .toNow(true)}{" "}
-                                                left
-                                             </p>
-                                          </div>
-                                       </div>
-                                       <div className=" rounded-lg  hidden sm:block">
-                                          <p>RS. {order.price}</p>
-                                       </div>
+            {actionError && <Notice onClose={() => setActionError("")}>{actionError}</Notice>}
 
-                                       <span
-                                          className={
-                                             order.isCompleted
-                                                ? "bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full"
-                                                : "bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full"
-                                          }>
-                                          {order.isCompleted
-                                             ? "Completed"
-                                             : "Pending"}
-                                       </span>
-                                       <div>
-                                          <button
-                                             onClick={() =>
-                                                handleContact(order)
-                                             }
-                                             className="p-2 px-6 bg-theme-accent rounded-lg text-white hover:border  border-theme-medium">
-                                             Message
-                                          </button>
-                                       </div>
-                                    </div>
-                                 ))
-                              ) : (
-                                 <div className="p-4 text-center text-theme-medium">
-                                    No orders found.
-                                 </div>
-                              )}
-                           </div>
-                        </>
-                     )}
-                  </div>
+            <section className="overflow-hidden rounded-2xl border border-line bg-white">
+               <div role="tablist" aria-label="Status" className="flex gap-1 overflow-x-auto border-b border-line px-3">
+                  {TABS.map((name) => {
+                     const on = name === tab;
+                     const count = list.filter((o) => matches(o, name)).length;
+                     return (
+                        <button
+                           key={name}
+                           type="button"
+                           role="tab"
+                           aria-selected={on}
+                           onClick={() => setTab(name)}
+                           className={`flex h-[52px] items-center gap-2 border-b-[3px] px-3.5 text-[15px] font-semibold ${
+                              on ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
+                           }`}>
+                           {name}
+                           <span
+                              className={`inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs ${
+                                 on ? "bg-ink text-white" : "bg-[#f0e3d9] text-ink"
+                              }`}>
+                              {count}
+                           </span>
+                        </button>
+                     );
+                  })}
                </div>
-            </div>
+
+               {isLoading ? (
+                  <Spinner label="Loading orders" />
+               ) : error ? (
+                  <div className="p-4">
+                     <Notice>{getErrorMessage(error)}</Notice>
+                  </div>
+               ) : rows.length === 0 ? (
+                  <EmptyState
+                     title={list.length ? `No ${tab.toLowerCase()} orders` : "No orders yet"}
+                     text={
+                        side === "selling"
+                           ? "Orders for your services will appear here."
+                           : "When you order a service it will appear here."
+                     }
+                     action={
+                        side === "buying" && !list.length ? (
+                           <Link to="/gigs" className={btn.primary}>
+                              Browse services
+                           </Link>
+                        ) : null
+                     }
+                  />
+               ) : (
+                  <ul className="m-0 list-none p-0">
+                     {rows.map((order) => (
+                        <OrderRow
+                           key={order._id}
+                           order={order}
+                           me={me}
+                           onMessage={handleMessage}
+                           onComplete={handleComplete}
+                           completing={completeMutation.isPending}
+                        />
+                     ))}
+                  </ul>
+               )}
+            </section>
          </div>
-      </>
+      </div>
    );
 };
 

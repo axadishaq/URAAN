@@ -1,16 +1,23 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Navigate } from "react-router-dom";
-import AdminPanel from "./AdminPanel";
+import { getCurrentUser } from "../../utils/currentUser";
+import { Spinner } from "../../components/ui/ui";
+
+// The admin panel (and its chart library) only loads for admins
+const AdminPanel = lazy(() => import("./AdminPanel"));
 
 export default function AdminProtectedRoute() {
-   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+   const currentUser = getCurrentUser();
    if (!currentUser) {
-      return <Navigate to="/login" replace />;
-   } else if (!currentUser || !currentUser.isAdmin) {
-      // Not logged in or not admin, redirect to login
-      alert("Access denied. Admins only.");
+      return <Navigate to="/login" replace state={{ from: { pathname: "/admin" } }} />;
+   }
+   if (!currentUser.isAdmin) {
+      // Logged in but not an admin
       return <Navigate to="/" replace />;
    }
-   // User is admin, show the panel
-   return <AdminPanel />;
+   return (
+      <Suspense fallback={<Spinner label="Loading admin panel" />}>
+         <AdminPanel />
+      </Suspense>
+   );
 }

@@ -1,30 +1,66 @@
-@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Comic+Relief:wght@400;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Nanum+Myeongjo&family=Noto+Sans+JP:wght@100..900&family=Noto+Sans+Mandaic&family=Noto+Sans+Tai+Viet&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Tagesschrift&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Merienda:wght@300..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Rock+Salt&display=swap");
 @import "tailwindcss";
-* {
-   /* font-family: Nunito Sans; */
-   /* font-family: Winky Sans; */
-   /* font-family: Inter; */
-   /* font-family: Caveat; */
-   /* font-family: Tagesschrif; */
-   /* font-family: Comic Relief; */
-   /* font-family: Merriweather; */
-   /* font-family: Josefin Sans; */
-   /* font-family: Merienda, cursive; */
-   scroll-behavior: smooth;
-   scroll-padding-top: 65px;
+
+/* URAAN design tokens: light theme, dark brown ink, peach accents.
+   Tailwind turns these into classes like bg-ink, text-muted, border-line. */
+@theme {
+   --color-ink: #2b0d07;
+   --color-muted: #5c3d31;
+   --color-subtle: #7a5a4c;
+   --color-clay: #a84f2c;
+   --color-peach: #efa180;
+   --color-blush: #fbe6d8;
+   --color-cream: #fbf6f1;
+   --color-sand: #f3e3d6;
+   --color-line: #eadbd0;
+   --color-line-strong: #d9c2b3;
+
+   --color-success: #1e6b3a;
+   --color-success-bg: #e3f2e7;
+   --color-warning: #6e4300;
+   --color-warning-bg: #fff0d2;
+   --color-danger: #a3261d;
+   --color-danger-bg: #fbe4e1;
+   --color-info: #1f4e8c;
+   --color-info-bg: #e3ecf8;
+
+   --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+   --font-display: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
 }
 
-/* Optional: Add your custom styles here */
+html {
+   scroll-behavior: smooth;
+   scroll-padding-top: 80px;
+}
 
 body {
-   font-family: "Inter", sans-serif;
+   margin: 0;
+   font-family: var(--font-sans);
+   color: var(--color-ink);
+   background: #ffffff;
+   overflow-x: hidden;
+   -webkit-font-smoothing: antialiased;
 }
+
+h1,
+h2,
+h3 {
+   text-wrap: balance;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+   outline: 2px solid var(--color-clay);
+   outline-offset: 2px;
+}
+
+/* Dotted peach background used by the home hero and the sign in panel */
 .hero-pattern {
-   background-color: #fbe6d8;
-   background-image: radial-gradient(#efa180 0.5px, transparent 0.5px);
+   background-color: var(--color-blush);
+   background-image: radial-gradient(var(--color-peach) 0.8px, transparent 0.8px);
    background-size: 15px 15px;
 }
+
+/* ---------- Legacy theme classes (kept so older markup still renders) ---------- */
 .border-theme-dark {
    border-color: #2b0d07;
 }
@@ -41,10 +77,11 @@ body {
    color: #2b0d07;
 }
 .text-theme-medium {
-   color: #8b6654;
+   color: #5c3d31;
 }
+/* peach text is unreadable on white, so this now uses the darker clay */
 .text-theme-accent {
-   color: #efa180;
+   color: #a84f2c;
 }
 .bg-theme-accent {
    background-color: #efa180;
@@ -54,37 +91,4 @@ body {
 }
 .bg-theme-dark {
    background-color: #2b0d07;
-}
-.hover\:bg-theme-medium:hover {
-   background-color: #8b6654;
-}
-.hover\:bg-theme-dark:hover {
-   background-color: #2b0d07;
-}
-.hover\:bg-theme-light:hover {
-   background-color: #fbe6d8;
-}
-.hover\:bg-theme-accent:hover {
-   background-color: #efa180;
-}
-.hover\:text-theme-dark:hover {
-   color: #2b0d07;
-}
-.hover\:text-theme-light:hover {
-   color: #fbe6d8;
-}
-.hover\:text-theme-accent:hover {
-   color: #efa180;
-}
-
-.g-btn {
-   background: linear-gradient(to right, #efa180, #efa180, #2b0d07);
-   transition: all 0.3s ease-in-out;
-   forced-color-adjust: auto;
-   border: 2px solid #2b0d07;
-}
-
-.g-btn:hover {
-   background: linear-gradient(to left, #efa180, #8b6654);
-   border-color: #2b0d07;
 }

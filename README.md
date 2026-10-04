@@ -154,16 +154,31 @@ URAAN/
    ```
 
 4. **Environment Setup**
-   Create `.env` files in both `api/` and `frontend/` directories with required variables.
+   Copy `api/.env.example` to `api/.env` and `frontend/.env.example` to `frontend/.env`, then fill in the values
+   (MongoDB connection string, JWT secret, Cloudinary upload URL).
 
 5. **Start Development**
    ```bash
-   # Terminal 1 - Start backend
-   cd api && npm run start
-   
+   # Terminal 1 - Start backend (auto-restarts on changes)
+   cd api && npm run dev
+
    # Terminal 2 - Start frontend
    cd frontend && npm run dev
    ```
+   Use `npm start` in `api/` to run the backend without auto-restart (production).
+
+6. **Create an admin account**
+   Register a normal account, then run:
+   ```bash
+   cd api && npm run make-admin -- <username>
+   ```
+   Log out and log in again; an **Admin Panel** link appears in the profile menu (route `/admin`).
+   (Alternatively set `ADMIN_ID` in `api/.env` to that user's id.)
+
+### Deployment notes
+- Set `NODE_ENV=production` on the backend so the login cookie works across sites (Vercel ↔ API).
+- Set `CLIENT_URL` on the backend to the frontend URL(s), comma separated, e.g.
+  `CLIENT_URL=https://uraan-pink.vercel.app`.
 
 ## 🤝 Community & Support
 
