@@ -1,0 +1,4 @@
+# Netlify: send API calls to the Render backend (same site, so login cookies
+# work in every browser) and let React handle every other page.
+/api/*  https://uraan-api.onrender.com/api/:splat  200
+/*      /index.html  200

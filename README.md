@@ -175,10 +175,22 @@ URAAN/
    Log out and log in again; an **Admin Panel** link appears in the profile menu (route `/admin`).
    (Alternatively set `ADMIN_ID` in `api/.env` to that user's id.)
 
-### Deployment notes
-- Set `NODE_ENV=production` on the backend so the login cookie works across sites (Vercel ↔ API).
-- Set `CLIENT_URL` on the backend to the frontend URL(s), comma separated, e.g.
-  `CLIENT_URL=https://uraan-pink.vercel.app`.
+### Deployment (free)
+**Backend on Render (free plan)**
+1. Create a free MongoDB Atlas M0 cluster and, under Network Access, allow `0.0.0.0/0`.
+2. In Render choose **New > Blueprint**, pick this repo and confirm. The `render.yaml`
+   file sets everything up; you only paste your `MONGO` connection string.
+   Render generates `JWT_KEY` for you.
+3. Note the service URL, e.g. `https://uraan-api.onrender.com`. If Render gave it a
+   different name, update it in `frontend/vercel.json` and `frontend/public/_redirects`.
+
+**Frontend on Vercel or Netlify**
+- Set `VITE_REQUEST=/api/` (and `VITE_CLOUDINARY_URL`) and redeploy.
+- API calls go through the frontend's own domain (`vercel.json` / `_redirects`), so the
+  login cookie works in every browser, including Safari, and refreshing any page works.
+
+The free Render plan sleeps after a period without traffic; the first request then takes
+about a minute. A free uptime monitor pinging `/api/courses` keeps it awake.
 
 ## 🤝 Community & Support
 
