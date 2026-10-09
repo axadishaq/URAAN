@@ -27,6 +27,8 @@ import MyCourses from "./pages/myCourses/MyCourses";
 import MyEnrollments from "./pages/myEnrollments/MyEnrollments";
 import AdminProtectedRoute from "./pages/admin/AdminProtectedRoute";
 import NotFound from "./pages/notFound/NotFound";
+import Blog from "./pages/blog/Blog";
+import BlogPost from "./pages/blog/BlogPost";
 import { getCurrentUser } from "./utils/currentUser";
 import { ToastProvider } from "./components/ui/Toast";
 import { useEffect } from "react";
@@ -95,6 +97,10 @@ const router = createBrowserRouter([
          { path: "/courses", element: <Courses /> },
          { path: "/courses/:id", element: <CourseDetail /> },
          { path: "/gigs/country/:country", element: <GigsByCountry /> },
+         { path: "/blog", element: <Blog /> },
+         { path: "/blog/:slug", element: <BlogPost /> },
+         // links from the old placeholder blog
+         { path: "/post/*", element: <Navigate to="/blog" replace /> },
          {
             path: "/myGigs",
             element: (

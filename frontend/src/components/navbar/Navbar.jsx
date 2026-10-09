@@ -146,6 +146,9 @@ function Navbar() {
                </NavLink>
                <DropMenu label="Courses" items={courseItems} active={onCourses} />
                <DropMenu label="Cities" items={cityItems} active={onCities} />
+               <NavLink to="/blog" className={linkClass}>
+                  Blog
+               </NavLink>
             </nav>
 
             <div className="flex-1" />
@@ -247,6 +250,7 @@ function Navbar() {
                <div className="flex flex-col gap-1">
                   <NavLink to="/" end className={linkClass}>Home</NavLink>
                   <NavLink to="/gigs" end className={linkClass}>Services</NavLink>
+                  <NavLink to="/blog" className={linkClass}>Blog</NavLink>
                   <p className={menuHeading}>Courses</p>
                   <div className="flex flex-wrap gap-2 px-1">
                      {courseItems.map((i) => (

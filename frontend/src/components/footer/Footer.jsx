@@ -32,6 +32,7 @@ function Footer() {
                   links={[
                      ["All services", "/gigs"],
                      ["Courses", "/courses"],
+                     ["Blog", "/blog"],
                      ["How it works", "/#how-it-works"],
                      ["Our team", "/#terminals"],
                   ]}
