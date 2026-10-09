@@ -1,482 +1,381 @@
-import { useEffect, useState } from "react";
-import {
-   Home,
-   ListOrdered,
-   Users,
-   Flag,
-   BarChart2,
-   ShoppingCart,
-   Calendar,
-   Bell,
-   Settings,
-   CreditCard,
-   Shield,
-   ChevronLeft,
-   MoreHorizontal,
-} from "lucide-react";
-import {
-   BarChart,
-   Bar,
-   XAxis,
-   YAxis,
-   Tooltip,
-   ResponsiveContainer,
-   CartesianGrid,
-} from "recharts";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, LayoutDashboard, Users, BriefcaseBusiness, ClipboardList, GraduationCap, Search } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import moment from "moment";
 
-import newRequest from "../../utils/newRequest";
+import newRequest, { getErrorMessage } from "../../utils/newRequest";
+import { getCurrentUser } from "../../utils/currentUser";
+import { categoryLabel } from "../../utils/categories";
+import { formatPrice } from "../../utils/format";
+import { Avatar, Badge, EmptyState, Notice, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
+
+const SECTIONS = [
+   { id: "home", label: "Overview", icon: LayoutDashboard },
+   { id: "users", label: "Users", icon: Users },
+   { id: "gigs", label: "Services", icon: BriefcaseBusiness },
+   { id: "orders", label: "Orders", icon: ClipboardList },
+   { id: "courses", label: "Courses", icon: GraduationCap },
+];
+
+const useAdminData = (key, url) =>
+   useQuery({ queryKey: ["admin", key], queryFn: () => newRequest.get(url).then((res) => res.data) });
+
+const Table = ({ head, children, empty }) =>
+   empty ? (
+      <EmptyState title="Nothing here yet" />
+   ) : (
+      <div className="overflow-x-auto">
+         <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead>
+               <tr className="bg-cream text-left text-muted">
+                  {head.map((h, i) => (
+                     <th key={h} scope="col" className={`px-4 py-3 font-semibold ${i === head.length - 1 ? "text-right" : ""}`}>
+                        {h}
+                     </th>
+                  ))}
+               </tr>
+            </thead>
+            <tbody>{children}</tbody>
+         </table>
+      </div>
+   );
+
+const td = "border-t border-[#f0e3d9] px-4 py-3 align-middle";
+
+const Panel = ({ title, tools, children }) => (
+   <section className="overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
+         <h2 className="m-0 flex-1 text-lg font-bold">{title}</h2>
+         {tools}
+      </div>
+      {children}
+   </section>
+);
+
+const SearchBox = ({ value, onChange, placeholder }) => (
+   <label className="flex h-10 items-center gap-2 rounded-[10px] border border-line-strong px-3">
+      <Search size={16} className="text-subtle" aria-hidden="true" />
+      <span className="sr-only">{placeholder}</span>
+      <input
+         type="search"
+         value={value}
+         onChange={(e) => onChange(e.target.value)}
+         placeholder={placeholder}
+         className="w-44 bg-transparent text-sm focus:outline-none"
+      />
+   </label>
+);
 
 export default function AdminPanel() {
-   const [isExpanded, setIsExpanded] = useState(false);
-   const [activeSection, setActiveSection] = useState("home");
+   const me = getCurrentUser();
+   const [section, setSection] = useState("home");
+   const [range, setRange] = useState(7);
+   const [userSearch, setUserSearch] = useState("");
+   const [roleFilter, setRoleFilter] = useState("all");
+   const [gigSearch, setGigSearch] = useState("");
+   const queryClient = useQueryClient();
+   const toast = useToast();
 
-   const mainMenuItems = [
-      { id: "home", icon: <Home size={30} />, label: "Home" },
-      { id: "users", icon: <Users size={30} />, label: "Users" },
-      { id: "gigs", icon: <ListOrdered size={30} />, label: "Services" },
-   ];
+   const users = useAdminData("users", "/users");
+   const gigs = useAdminData("gigs", "/gigs?sort=createdAt");
+   const orders = useAdminData("orders", "/orders/admin/all");
+   const courses = useAdminData("courses", "/courses");
+   const stats = useAdminData("stats", "/orders/admin");
 
-   const discoveryMenuItems = [
-      { id: "event", icon: <Flag size={30} />, label: "Event" },
-      { id: "stats", icon: <BarChart2 size={30} />, label: "Statistiques" },
-      { id: "shop", icon: <ShoppingCart size={30} />, label: "Boutique" },
-      { id: "calendar", icon: <Calendar size={30} />, label: "Calendrier" },
-   ];
-
-   const accountMenuItems = [
-      { id: "notifications", icon: <Bell size={30} />, label: "Notification" },
-      { id: "settings", icon: <Settings size={30} />, label: "Paramètres" },
-   ];
-
-   const handleMouseEnter = () => {
-      setIsExpanded(true);
+   const remove = useMutation({
+      mutationFn: ({ url }) => newRequest.delete(url),
+      onSuccess: (_, { label }) => {
+         queryClient.invalidateQueries({ queryKey: ["admin"] });
+         queryClient.invalidateQueries({ queryKey: ["gigs"] });
+         queryClient.invalidateQueries({ queryKey: ["courses"] });
+         toast({ title: "Deleted", text: label });
+      },
+      onError: (err) => toast({ type: "error", title: "Delete failed", text: getErrorMessage(err) }),
+   });
+   const confirmDelete = (url, label, warning) => {
+      if (window.confirm(`Delete ${label}? ${warning || "This can't be undone."}`)) remove.mutate({ url, label: `${label} was removed.` });
    };
 
-   const handleMouseLeave = () => {
-      setIsExpanded(false);
-   };
-   //Getting Orders
-   const [orderStats, setOrderStats] = useState([]);
-   const [loadingOrders, setLoadingOrders] = useState(false);
-   const [orderRange, setOrderRange] = useState("week"); // "week" or "month"
+   const userById = Object.fromEntries((users.data || []).map((u) => [u._id, u]));
+   const errorOf = [users, gigs, orders, courses, stats].find((q) => q.error)?.error;
 
-   useEffect(() => {
-      if (activeSection === "home") {
-         setLoadingOrders(true);
-         newRequest
-            .get("/orders/admin")
-            .then((res) => {
-               setOrderStats(res.data); // Use the grouped data directly
-            })
-            .catch(() => setOrderStats([]))
-            .finally(() => setLoadingOrders(false));
-      }
-   }, [activeSection]);
-
-   // Filter data for week or month
-   const filteredOrderStats = orderStats.filter((item) => {
-      const itemDate = moment(item.date, "YYYY-MM-DD");
-      if (orderRange === "week") {
-         return itemDate.isAfter(moment().subtract(7, "days"));
-      } else if (orderRange === "month") {
-         return itemDate.isAfter(moment().subtract(30, "days"));
-      }
-      return true;
+   // last N days, including days without orders
+   const byDate = Object.fromEntries((stats.data || []).map((s) => [s.date, s.count]));
+   const chart = Array.from({ length: range }, (_, i) => {
+      const d = moment().subtract(range - 1 - i, "days");
+      return { date: d.format(range > 7 ? "D MMM" : "ddd"), count: byDate[d.format("YYYY-MM-DD")] || 0 };
    });
 
-   //getting Gigs
+   const allUsers = users.data || [];
+   const providers = allUsers.filter((u) => u.isSeller).length;
+   const pending = (orders.data || []).filter((o) => !o.isCompleted).length;
 
-   const [gigs, setGigs] = useState([]);
-   const [loadingGigs, setLoadingGigs] = useState(false);
+   const filteredUsers = allUsers.filter((u) => {
+      const t = userSearch.trim().toLowerCase();
+      const roleOk =
+         roleFilter === "all" ||
+         (roleFilter === "admin" && u.isAdmin) ||
+         (roleFilter === "provider" && u.isSeller) ||
+         (roleFilter === "customer" && !u.isSeller && !u.isAdmin);
+      return roleOk && (!t || u.username.toLowerCase().includes(t) || u.email?.toLowerCase().includes(t));
+   });
+   const filteredGigs = (gigs.data || []).filter(
+      (g) => !gigSearch.trim() || g.title.toLowerCase().includes(gigSearch.trim().toLowerCase())
+   );
 
-   // Fetch gigs when Gigs tab is active
-   useEffect(() => {
-      if (activeSection === "gigs") {
-         setLoadingGigs(true);
-         newRequest
-            .get("/gigs")
-            .then((res) => setGigs(res.data))
-            .catch(() => setGigs([]))
-            .finally(() => setLoadingGigs(false));
-      }
-   }, [activeSection]);
+   const roleBadge = (u) =>
+      u.isAdmin ? <Badge tone="dark">Admin</Badge> : u.isSeller ? <Badge>Provider</Badge> : <Badge tone="info">Customer</Badge>;
 
-   // Delete gig handler
-   const handleDeleteGig = async (gigId) => {
-      if (!window.confirm("Are you sure you want to delete this gig?")) return;
-      try {
-         await newRequest.delete(`/gigs/${gigId}`);
-         setGigs((prev) => prev.filter((g) => g._id !== gigId));
-      } catch (err) {
-         alert(`Failed to delete gig. ${err?.response?.data?.message}`);
-      }
-   };
-
-   // getting users
-
-   const [users, setUsers] = useState([]);
-   const [loadingUsers, setLoadingUsers] = useState(false);
-
-   useEffect(() => {
-      if (activeSection === "users") {
-         setLoadingUsers(true);
-         newRequest
-            .get("/users")
-            .then((res) => setUsers(res.data))
-            .catch(() => setUsers([]))
-            .finally(() => setLoadingUsers(false));
-      }
-   }, [activeSection]);
-
-   const handleDeleteUser = async (userId) => {
-      if (!window.confirm("Are you sure you want to delete this user?")) return;
-      try {
-         await newRequest.delete(`/users/${userId}`);
-         setUsers((prev) => prev.filter((u) => (u._id || u.id) !== userId));
-      } catch (err) {
-         alert(`Failed to delete user. ${err?.response?.data?.message}`);
-      }
-   };
+   const counts = { users: allUsers.length, gigs: gigs.data?.length, orders: orders.data?.length, courses: courses.data?.length };
 
    return (
-      <div className="flex h-full bg-gradient-to-br from-green-300 via-orange-100 to-red-300">
-         {/* Sidebar */}
-         <div
-            className={`relative h-full transition-all duration-300 ease-in-out px-2 bg-opacity-30 backdrop-blur-md rounded-r-2xl shadow-lg hover:shadow-xl ${
-               isExpanded ? "w-64" : "w-18"
-            }`}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}>
-            {/* Top menu button */}
-            <div className="p-4 flex justify-between items-center">
-               <div className="text-2xl font-semibold border-l-4  p-2 rounded-full hover:text-teal-600 transition-all cursor-pointer">
-                  A
-                  <span
-                     className={` whitespace-nowrap transition-opacity duration-300 ${
-                        isExpanded ? "opacity-100" : "opacity-0"
-                     }`}>
-                     dmin
-                  </span>
-               </div>
-               <div
-                  className={`p-2 rounded-full hover:text-teal-600 transition-all cursor-pointer text-xs ${
-                     isExpanded ? "opacity-100" : "opacity-0"
-                  }`}>
-                  see you!
-               </div>
-            </div>
-
-            <div className="border-b border-gray-500 mx-3"></div>
-
-            {/* Main Menu */}
-            <nav className="mt-4">
-               {mainMenuItems.map((item) => (
+      <div className="flex min-h-screen flex-wrap bg-cream text-ink">
+         <nav aria-label="Admin" className="flex w-full flex-col gap-1 border-b border-line bg-white px-4 py-5 md:min-h-screen md:w-64 md:border-b-0 md:border-r">
+            <Link to="/" className="flex items-center gap-2.5 px-2 pb-4 text-ink">
+               <img src="/uraan.png" alt="" className="h-8 w-8 rounded-lg bg-blush object-contain p-0.5" />
+               <span className="font-display text-xl font-bold">URAAN Admin</span>
+            </Link>
+            <div className="flex gap-1 overflow-x-auto md:flex-col">
+               {SECTIONS.map(({ id, label, icon: Icon }) => (
                   <button
-                     key={item.id}
-                     onClick={() => setActiveSection(item.id)}
-                     className={`flex items-center w-full px-4 py-3 text-left transition-all rounded-lg ${
-                        activeSection === item.id
-                           ? "text-black font-semibold bg-white bg-opacity-30 shadow-sm"
-                           : "text-gray-600 hover:bg-white hover:bg-opacity-30 hover:backdrop-blur-sm"
+                     key={id}
+                     type="button"
+                     aria-current={section === id ? "page" : undefined}
+                     onClick={() => setSection(id)}
+                     className={`flex shrink-0 items-center gap-2.5 rounded-[10px] px-3 py-3 text-[15px] font-semibold ${
+                        section === id ? "bg-blush text-ink" : "text-muted hover:bg-cream hover:text-ink"
                      }`}>
-                     <span className="inline-flex items-center justify-center w-6">
-                        {item.icon}
-                     </span>
-                     <span
-                        className={`ml-4 whitespace-nowrap transition-opacity duration-300 ${
-                           isExpanded ? "opacity-100" : "opacity-0"
-                        }`}>
-                        {item.label}
-                     </span>
+                     <Icon size={18} aria-hidden="true" />
+                     {label}
+                     {counts[id] !== undefined && <span className="ml-auto pl-2 text-[13px] text-subtle">{counts[id]}</span>}
                   </button>
                ))}
-            </nav>
-
-            <div className="border-b border-gray-500 mx-3 my-2"></div>
-
-            {/* Discovery Section */}
-            <div
-               className={`mt-2 mb-1 px-4 text-gray-500 text-xs font-medium transition-opacity duration-300 ${
-                  isExpanded ? "opacity-100" : "opacity-0"
-               }`}>
-               Discover
             </div>
-            <nav>
-               {discoveryMenuItems.map((item) => (
-                  <button
-                     key={item.id}
-                     onClick={() => setActiveSection(item.id)}
-                     className={`flex items-center w-full px-4 py-3 text-left transition-all rounded-lg ${
-                        activeSection === item.id
-                           ? "text-black font-semibold bg-white bg-opacity-30 shadow-sm"
-                           : "text-gray-600 hover:bg-white hover:bg-opacity-30 hover:backdrop-blur-sm"
-                     }`}>
-                     <span className="inline-flex items-center justify-center w-6">
-                        {item.icon}
-                     </span>
-                     <span
-                        className={`ml-4 whitespace-nowrap transition-opacity duration-300 ${
-                           isExpanded ? "opacity-100" : "opacity-0"
-                        }`}>
-                        {item.label}
-                     </span>
-                  </button>
-               ))}
-            </nav>
+            <div className="hidden flex-1 md:block" />
+            <Link to="/" className="mt-2 flex items-center gap-2 rounded-[10px] px-3 py-3 text-[15px] font-semibold text-clay hover:bg-cream">
+               <ArrowLeft size={18} aria-hidden="true" />
+               Back to site
+            </Link>
+         </nav>
 
-            <div className="border-b border-gray-500 mx-3 my-2"></div>
-
-            {/* Account Section */}
-            <div
-               className={`mt-2 mb-1 px-4 text-gray-500 text-xs font-medium transition-opacity duration-300 ${
-                  isExpanded ? "opacity-100" : "opacity-0"
-               }`}>
-               Account
+         <main className="flex min-w-0 flex-1 flex-col gap-6 p-5 sm:p-8">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+               <h1 className="m-0 font-display text-3xl font-bold sm:text-4xl">{SECTIONS.find((s) => s.id === section).label}</h1>
+               <span className="text-sm text-muted">Signed in as {me?.username}</span>
             </div>
-            <nav>
-               {accountMenuItems.map((item) => (
-                  <button
-                     key={item.id}
-                     onClick={() => setActiveSection(item.id)}
-                     className={`flex items-center w-full px-4 py-3 text-left transition-all rounded-lg ${
-                        activeSection === item.id
-                           ? "text-black font-semibold bg-white bg-opacity-30 shadow-sm"
-                           : "text-gray-600 hover:bg-white hover:bg-opacity-30 hover:backdrop-blur-sm"
-                     }`}>
-                     <span className="inline-flex items-center justify-center w-6">
-                        {item.icon}
-                     </span>
-                     <span
-                        className={`ml-4 whitespace-nowrap transition-opacity duration-300 ${
-                           isExpanded ? "opacity-100" : "opacity-0"
-                        }`}>
-                        {item.label}
-                     </span>
-                  </button>
-               ))}
-            </nav>
-         </div>
-         <div className="flex-grow p-6">
-            <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 h-screen overflow-scroll">
-               <h1 className="text-2xl font-bold text-gray-800 mb-4">
-                  {mainMenuItems.find((item) => item.id === activeSection)
-                     ?.label ||
-                     discoveryMenuItems.find(
-                        (item) => item.id === activeSection
-                     )?.label ||
-                     accountMenuItems.find((item) => item.id === activeSection)
-                        ?.label}
-               </h1>
-               {/* home / orders tab */}
-               {activeSection === "home" ? (
-                  <div>
-                     <h2 className="text-xl font-semibold mb-4">
-                        Orders Created (by Date)
-                     </h2>
-                     {/* Range Selector */}
-                     <div className="mb-4 flex gap-2">
-                        <button
-                           className={`px-4 py-2 rounded ${
-                              orderRange === "week"
-                                 ? "bg-theme-accent text-white"
-                                 : "bg-white text-theme-dark"
-                           }`}
-                           onClick={() => setOrderRange("week")}>
-                           This Week
-                        </button>
-                        <button
-                           className={`px-4 py-2 rounded ${
-                              orderRange === "month"
-                                 ? "bg-theme-accent text-white"
-                                 : "bg-white text-theme-dark"
-                           }`}
-                           onClick={() => setOrderRange("month")}>
-                           This Month
-                        </button>
+            {errorOf && <Notice>{getErrorMessage(errorOf)}</Notice>}
+
+            {section === "home" && (
+               <>
+                  <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+                     {[
+                        ["Users", counts.users, `${providers} providers · ${allUsers.length - providers} customers`],
+                        ["Services", counts.gigs, "listed on URAAN"],
+                        ["Orders", counts.orders, `${pending} pending`],
+                        ["Courses", counts.courses, `${(courses.data || []).reduce((s, c) => s + (c.enrolledCount || 0), 0)} enrollments`],
+                     ].map(([label, value, note]) => (
+                        <div key={label} className="flex flex-col gap-1.5 rounded-[14px] border border-line bg-white p-[18px]">
+                           <span className="text-sm text-muted">{label}</span>
+                           <span className="font-display text-[34px] font-bold leading-none">{value ?? "…"}</span>
+                           <span className="text-[13px] text-muted">{note}</span>
+                        </div>
+                     ))}
+                  </div>
+
+                  <Panel
+                     title="Orders per day"
+                     tools={
+                        <div role="group" aria-label="Range" className="flex gap-1 rounded-[10px] bg-[#f0e3d9] p-1">
+                           {[7, 30].map((n) => (
+                              <button
+                                 key={n}
+                                 type="button"
+                                 aria-pressed={range === n}
+                                 onClick={() => setRange(n)}
+                                 className={`h-9 rounded-lg px-3.5 text-sm font-semibold ${range === n ? "bg-white text-ink" : "text-muted"}`}>
+                                 {n} days
+                              </button>
+                           ))}
+                        </div>
+                     }>
+                     <div className="p-4">
+                        {stats.isLoading ? (
+                           <Spinner />
+                        ) : (
+                           <ResponsiveContainer width="100%" height={280}>
+                              <BarChart data={chart}>
+                                 <CartesianGrid strokeDasharray="3 3" stroke="#eadbd0" vertical={false} />
+                                 <XAxis dataKey="date" tick={{ fill: "#5c3d31", fontSize: 12 }} />
+                                 <YAxis allowDecimals={false} tick={{ fill: "#5c3d31", fontSize: 12 }} />
+                                 <Tooltip cursor={{ fill: "#fbe6d8" }} />
+                                 <Bar dataKey="count" name="Orders" fill="#2b0d07" radius={[6, 6, 0, 0]} />
+                              </BarChart>
+                           </ResponsiveContainer>
+                        )}
                      </div>
-                     {loadingOrders ? (
-                        <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                           <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                              <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                           </div>
-                        </div>
-                     ) : (
-                        <ResponsiveContainer width="100%" height={400}>
-                           <BarChart data={filteredOrderStats}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis allowDecimals={false} />
-                              <Tooltip />
-                              <Bar dataKey="count" fill="#10b981" />
-                           </BarChart>
-                        </ResponsiveContainer>
-                     )}
-                  </div>
-               ) : activeSection === "gigs" ? (
-                  <div>
-                     <h2 className="text-xl font-semibold mb-4">
-                        All Services
-                     </h2>
-                     {loadingGigs ? (
-                        <>
-                           <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                              <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                                 <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                              </div>
-                           </div>
-                        </>
-                     ) : gigs.length === 0 ? (
-                        <div>No services found.</div>
-                     ) : (
-                        <div className="overflow-x-auto">
-                           <table className="min-w-full bg-white bg-opacity-60 rounded-lg">
-                              <thead className="border-b-2">
-                                 <tr>
-                                    <th className="py-2 px-4">Cover</th>
-                                    <th className="py-2 px-4">Title</th>
-                                    <th className="py-2 px-4">Price</th>
-                                    <th className="py-2 px-4">Created At</th>
-                                    <th className="py-2 px-4">Actions</th>
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 {gigs.map((gig) => (
-                                    <tr
-                                       key={gig._id || gig.id}
-                                       className="border-b">
-                                       <td className="py-2 px-4">
-                                          {gig.cover && (
-                                             <img
-                                                src={gig.cover}
-                                                alt={gig.title}
-                                                className="w-18 h-16 object-cover rounded"
-                                             />
-                                          )}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {gig.title}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {gig.price}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {gig.createdAt
-                                             ? new Date(
-                                                  gig.createdAt
-                                               ).toLocaleDateString()
-                                             : "-"}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          <button
-                                             className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-800"
-                                             onClick={() =>
-                                                handleDeleteGig(
-                                                   gig._id || gig.id
-                                                )
-                                             }>
-                                             Delete
-                                          </button>
-                                       </td>
-                                    </tr>
-                                 ))}
-                              </tbody>
-                           </table>
-                        </div>
-                     )}
-                  </div>
-               ) : activeSection === "users" ? (
-                  <div>
-                     <h2 className="text-xl font-semibold mb-4">All Users</h2>
-                     {loadingUsers ? (
-                        <div>
-                           <>
-                              <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                                 <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                                    <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                                 </div>
-                              </div>
-                           </>
-                        </div>
-                     ) : users.length === 0 ? (
-                        <div>No users found.</div>
-                     ) : (
-                        <div className="overflow-x-auto">
-                           <table className="min-w-full bg-white bg-opacity-60 rounded-lg">
-                              <thead className="border-b-2">
-                                 <tr>
-                                    <th className="py-2 px-2">Name</th>
-                                    <th className="py-2 px-4">Email</th>
-                                    <th className="py-2 px-4">Role</th>
-                                    <th className="py-2 px-4">Joined</th>
-                                    <th className="py-2 px-4">Actions</th>
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 {users.map((user) => (
-                                    <tr
-                                       key={user._id || user.id}
-                                       className="border-b">
-                                       <td className="py-2 px-4">
-                                          {user.username || user.name}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {user.email}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {user.isSeller ? "Seller" : "Buyer"}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          {user.createdAt
-                                             ? new Date(
-                                                  user.createdAt
-                                               ).toLocaleDateString()
-                                             : "-"}
-                                       </td>
-                                       <td className="py-2 px-4">
-                                          <button
-                                             className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-800"
-                                             onClick={() =>
-                                                handleDeleteUser(
-                                                   user._id || user.id
-                                                )
-                                             }>
-                                             Delete
-                                          </button>
-                                       </td>
-                                    </tr>
-                                 ))}
-                              </tbody>
-                           </table>
-                        </div>
-                     )}
-                  </div>
-               ) : (
-                  <p className="text-gray-600">
-                     {activeSection}
-                     Error while getting Orders!
-                  </p>
-               )}
-            </div>
-         </div>
+                  </Panel>
 
-         {/* Main Content */}
-         {/* <div className="flex-grow p-6">
-            <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 h-full">
-               <h1 className="text-2xl font-bold text-gray-800 mb-4">
-                  {mainMenuItems.find((item) => item.id === activeSection)
-                     ?.label ||
-                     discoveryMenuItems.find(
-                        (item) => item.id === activeSection
-                     )?.label ||
-                     accountMenuItems.find((item) => item.id === activeSection)
-                        ?.label}
-               </h1>
-               <p className="text-gray-600">
-                  Contenu de la page {activeSection}
-               </p>
-            </div>
-         </div> */}
+                  <Panel title="Recent orders">
+                     <Table head={["Service", "Customer", "Date", "Status"]} empty={!orders.isLoading && !(orders.data || []).length}>
+                        {(orders.data || []).slice(0, 5).map((o) => (
+                           <tr key={o._id}>
+                              <td className={td}>{o.title}</td>
+                              <td className={td}>{userById[o.buyerId]?.username || "Deleted user"}</td>
+                              <td className={`${td} text-muted`}>{moment(o.createdAt).format("D MMM YYYY")}</td>
+                              <td className={`${td} text-right`}>
+                                 <Badge tone={o.isCompleted ? "done" : "pending"}>{o.isCompleted ? "Completed" : "Pending"}</Badge>
+                              </td>
+                           </tr>
+                        ))}
+                     </Table>
+                  </Panel>
+               </>
+            )}
+
+            {section === "users" && (
+               <Panel
+                  title="All users"
+                  tools={
+                     <>
+                        <SearchBox value={userSearch} onChange={setUserSearch} placeholder="Search name or email" />
+                        <label className="flex">
+                           <span className="sr-only">Role</span>
+                           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="h-10 rounded-[10px] border border-line-strong bg-white px-2.5 text-sm">
+                              <option value="all">All roles</option>
+                              <option value="provider">Providers</option>
+                              <option value="customer">Customers</option>
+                              <option value="admin">Admins</option>
+                           </select>
+                        </label>
+                     </>
+                  }>
+                  {users.isLoading ? (
+                     <Spinner />
+                  ) : (
+                     <Table head={["User", "City", "Role", "Joined", "Actions"]} empty={!filteredUsers.length}>
+                        {filteredUsers.map((u) => (
+                           <tr key={u._id}>
+                              <td className={td}>
+                                 <span className="flex items-center gap-2.5">
+                                    <Avatar user={u} size={34} />
+                                    <span className="flex flex-col">
+                                       <strong>{u.username}</strong>
+                                       <span className="text-[13px] text-muted">{u.email}</span>
+                                    </span>
+                                 </span>
+                              </td>
+                              <td className={td}>{u.country}</td>
+                              <td className={td}>{roleBadge(u)}</td>
+                              <td className={`${td} text-muted`}>{moment(u.createdAt).format("D MMM YYYY")}</td>
+                              <td className={`${td} text-right`}>
+                                 {u._id !== me?._id && (
+                                    <button
+                                       type="button"
+                                       aria-label={`Delete ${u.username}`}
+                                       onClick={() => confirmDelete(`/users/${u._id}`, `user ${u.username}`, "Their services and courses are removed too.")}
+                                       className={btn.danger}>
+                                       Delete
+                                    </button>
+                                 )}
+                              </td>
+                           </tr>
+                        ))}
+                     </Table>
+                  )}
+               </Panel>
+            )}
+
+            {section === "gigs" && (
+               <Panel title="All services" tools={<SearchBox value={gigSearch} onChange={setGigSearch} placeholder="Search services" />}>
+                  {gigs.isLoading ? (
+                     <Spinner />
+                  ) : (
+                     <Table head={["Service", "Provider", "Price", "Created", "Actions"]} empty={!filteredGigs.length}>
+                        {filteredGigs.map((g) => (
+                           <tr key={g._id}>
+                              <td className={td}>
+                                 <span className="flex items-center gap-3">
+                                    <Picture src={g.cover} alt="" className="h-11 w-14 shrink-0 rounded-lg" />
+                                    <span className="flex flex-col">
+                                       <Link to={`/gig/${g._id}`} className="font-semibold hover:underline">
+                                          {g.title}
+                                       </Link>
+                                       <span className="text-[13px] text-muted">{categoryLabel(g.category)}</span>
+                                    </span>
+                                 </span>
+                              </td>
+                              <td className={td}>{userById[g.userId]?.username || "…"}</td>
+                              <td className={td}>{formatPrice(g.price)}</td>
+                              <td className={`${td} text-muted`}>{moment(g.createdAt).format("D MMM YYYY")}</td>
+                              <td className={`${td} text-right`}>
+                                 <button type="button" aria-label={`Delete ${g.title}`} onClick={() => confirmDelete(`/gigs/${g._id}`, `"${g.title}"`)} className={btn.danger}>
+                                    Delete
+                                 </button>
+                              </td>
+                           </tr>
+                        ))}
+                     </Table>
+                  )}
+               </Panel>
+            )}
+
+            {section === "orders" && (
+               <Panel title="All orders">
+                  {orders.isLoading ? (
+                     <Spinner />
+                  ) : (
+                     <Table head={["Service", "Customer", "Provider", "Price", "Date", "Status"]} empty={!(orders.data || []).length}>
+                        {(orders.data || []).map((o) => (
+                           <tr key={o._id}>
+                              <td className={td}>{o.title}</td>
+                              <td className={td}>{userById[o.buyerId]?.username || "Deleted user"}</td>
+                              <td className={td}>{userById[o.sellerId]?.username || "Deleted user"}</td>
+                              <td className={td}>{formatPrice(o.price)}</td>
+                              <td className={`${td} text-muted`}>{moment(o.createdAt).format("D MMM YYYY")}</td>
+                              <td className={`${td} text-right`}>
+                                 <Badge tone={o.isCompleted ? "done" : "pending"}>{o.isCompleted ? "Completed" : "Pending"}</Badge>
+                              </td>
+                           </tr>
+                        ))}
+                     </Table>
+                  )}
+               </Panel>
+            )}
+
+            {section === "courses" && (
+               <Panel title="All courses">
+                  {courses.isLoading ? (
+                     <Spinner />
+                  ) : (
+                     <Table head={["Course", "Teacher", "Level", "Enrolled", "Actions"]} empty={!(courses.data || []).length}>
+                        {(courses.data || []).map((c) => (
+                           <tr key={c._id}>
+                              <td className={td}>
+                                 <Link to={`/courses/${c._id}`} className="font-semibold hover:underline">
+                                    {c.title}
+                                 </Link>
+                              </td>
+                              <td className={td}>{userById[c.userId]?.username || "…"}</td>
+                              <td className={td}>
+                                 <Badge>{c.level}</Badge>
+                              </td>
+                              <td className={td}>{c.enrolledCount || 0}</td>
+                              <td className={`${td} text-right`}>
+                                 <button type="button" aria-label={`Delete ${c.title}`} onClick={() => confirmDelete(`/courses/${c._id}`, `"${c.title}"`)} className={btn.danger}>
+                                    Delete
+                                 </button>
+                              </td>
+                           </tr>
+                        ))}
+                     </Table>
+                  )}
+               </Panel>
+            )}
+         </main>
       </div>
    );
 }

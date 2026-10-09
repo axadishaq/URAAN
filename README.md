@@ -154,16 +154,43 @@ URAAN/
    ```
 
 4. **Environment Setup**
-   Create `.env` files in both `api/` and `frontend/` directories with required variables.
+   Copy `api/.env.example` to `api/.env` and `frontend/.env.example` to `frontend/.env`, then fill in the values
+   (MongoDB connection string, JWT secret, Cloudinary upload URL).
 
 5. **Start Development**
    ```bash
-   # Terminal 1 - Start backend
-   cd api && npm run start
-   
+   # Terminal 1 - Start backend (auto-restarts on changes)
+   cd api && npm run dev
+
    # Terminal 2 - Start frontend
    cd frontend && npm run dev
    ```
+   Use `npm start` in `api/` to run the backend without auto-restart (production).
+
+6. **Create an admin account**
+   Register a normal account, then run:
+   ```bash
+   cd api && npm run make-admin -- <username>
+   ```
+   Log out and log in again; an **Admin Panel** link appears in the profile menu (route `/admin`).
+   (Alternatively set `ADMIN_ID` in `api/.env` to that user's id.)
+
+### Deployment (free)
+**Backend on Render (free plan)**
+1. Create a free MongoDB Atlas M0 cluster and, under Network Access, allow `0.0.0.0/0`.
+2. In Render choose **New > Blueprint**, pick this repo and confirm. The `render.yaml`
+   file sets everything up; you only paste your `MONGO` connection string.
+   Render generates `JWT_KEY` for you.
+3. Note the service URL, e.g. `https://uraan-api.onrender.com`. If Render gave it a
+   different name, update it in `frontend/vercel.json` and `frontend/public/_redirects`.
+
+**Frontend on Vercel or Netlify**
+- Set `VITE_REQUEST=/api/` (and `VITE_CLOUDINARY_URL`) and redeploy.
+- API calls go through the frontend's own domain (`vercel.json` / `_redirects`), so the
+  login cookie works in every browser, including Safari, and refreshing any page works.
+
+The free Render plan sleeps after a period without traffic; the first request then takes
+about a minute. A free uptime monitor pinging `/api/courses` keeps it awake.
 
 ## 🤝 Community & Support
 

@@ -1,105 +1,84 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, MapPin } from "lucide-react";
+import { CITIES } from "../../utils/cities";
 
-import { Link, useNavigate } from "react-router";
+const POPULAR = [
+   ["Technician", "/gigs?category=Technicion"],
+   ["Household", "/gigs?category=Household"],
+   ["Repairing", "/gigs?search=repair"],
+   ["Tailoring", "/gigs?category=Clothing"],
+];
 
 function Featured() {
    const [search, setSearch] = useState("");
-   const [location, setLocation] = useState("");
+   const [city, setCity] = useState("");
    const navigate = useNavigate();
-   const handleSearch = () => {
-      if (search || location) {
-         navigate(`/gigs?search=${search}&country=${location}`);
-      }
+
+   const handleSearch = (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      if (city) params.set("country", city);
+      navigate(`/gigs?${params.toString()}`);
    };
 
    return (
-      <section className="hero-pattern py-26 md:py-34 min-h-[50vh]">
-         <div className="container mx-auto px-4 md:px-8">
-            <div className="max-w-3xl mx-auto text-center">
-               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-theme-dark mb-10">
-                  Find the Service You Need
-               </h1>
-               <p className="text-lg md:text-xl text-theme-medium mb-12">
-                  Explore thousands of services with all the information you
-                  need. Its your future. Come find it.
-               </p>
+      <section className="hero-pattern px-4 pb-20 pt-20 sm:pt-24">
+         <div className="mx-auto flex max-w-[820px] flex-col items-center gap-6 text-center">
+            <h1 className="m-0 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+               Find the Service You Need
+            </h1>
+            <p className="m-0 max-w-[620px] text-lg leading-relaxed text-muted">
+               Explore local services and skill courses with all the information you need. It's your
+               future. Come find it.
+            </p>
 
-               {/* <!-- Search Box --> */}
-               <div className="bg-white p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center w-full md:w-auto">
-                     <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-theme-medium mr-2"
-                        viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path
-                           fill-rule="evenodd"
-                           d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                           clip-rule="evenodd"
-                        />
-                     </svg>
-                     <input
-                        type="text"
-                        value={search}
-                        placeholder="Job title or keyword"
-                        className="flex-1 outline-none text-theme-dark"
-                        onChange={(e) => setSearch(e.target.value)}
-                     />
-                  </div>
-                  <div className="h-8 border-r border-gray-300 hidden md:block"></div>
-                  <div className="flex items-center w-full md:w-auto">
-                     <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-theme-medium mr-2"
-                        viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path
-                           fill-rule="evenodd"
-                           d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                           clip-rule="evenodd"
-                        />
-                     </svg>
-                     <input
-                        type="text"
-                        placeholder="Location"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className="flex-1 outline-none text-theme-dark"
-                     />
-                  </div>
-                  <button
-                     onClick={handleSearch}
-                     className="bg-theme-accent hover:bg-theme-medium text-white py-3 px-6 rounded-lg font-medium transition-colors w-full md:w-auto">
-                     Search
-                  </button>
-               </div>
+            <form
+               role="search"
+               onSubmit={handleSearch}
+               className="flex w-full flex-wrap gap-2 rounded-2xl bg-white p-2.5 shadow-[0_10px_30px_rgba(43,13,7,0.10)]">
+               <label className="flex h-[54px] flex-[2_1_240px] items-center gap-2.5 rounded-[10px] bg-cream px-3.5">
+                  <Search size={20} className="text-subtle" aria-hidden="true" />
+                  <span className="sr-only">Service or keyword</span>
+                  <input
+                     type="text"
+                     value={search}
+                     onChange={(e) => setSearch(e.target.value)}
+                     placeholder="Service or keyword, e.g. AC repair"
+                     className="min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-subtle focus:outline-none"
+                  />
+               </label>
+               <label className="flex h-[54px] flex-[1_1_170px] items-center gap-2.5 rounded-[10px] bg-cream px-3.5">
+                  <MapPin size={20} className="text-subtle" aria-hidden="true" />
+                  <span className="sr-only">City</span>
+                  <select
+                     value={city}
+                     onChange={(e) => setCity(e.target.value)}
+                     className="min-w-0 flex-1 bg-transparent text-base text-ink focus:outline-none">
+                     <option value="">Any city</option>
+                     {CITIES.map((c) => (
+                        <option key={c}>{c}</option>
+                     ))}
+                  </select>
+               </label>
+               <button
+                  type="submit"
+                  className="h-[54px] flex-[0_0_auto] rounded-[10px] bg-ink px-8 text-base font-semibold text-white hover:bg-[#4a1e14]">
+                  Search
+               </button>
+            </form>
 
-               {/* <!-- Popular Searches --> */}
-               <div className="mt-8 flex flex-wrap justify-center gap-2">
-                  <span className="text-sm text-theme-medium">
-                     Popular Searches:
-                  </span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+               <span className="mr-1 text-sm text-muted">Popular searches:</span>
+               {POPULAR.map(([label, to]) => (
                   <Link
-                     to=""
-                     className="text-sm text-theme-accent hover:underline">
-                     Technicion
+                     key={label}
+                     to={to}
+                     className="rounded-full border border-[#e2c6b4] bg-white px-3.5 py-2 text-sm text-ink hover:border-ink">
+                     {label}
                   </Link>
-                  <Link
-                     to=""
-                     className="text-sm text-theme-accent hover:underline">
-                     Household
-                  </Link>
-                  <Link
-                     to=""
-                     className="text-sm text-theme-accent hover:underline">
-                     Repairing
-                  </Link>
-                  <Link
-                     to=""
-                     className="text-sm text-theme-accent hover:underline">
-                     Indoor
-                  </Link>
-               </div>
+               ))}
             </div>
          </div>
       </section>

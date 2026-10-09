@@ -1,58 +1,34 @@
 import React from "react";
+import moment from "moment";
 import { useQuery } from "@tanstack/react-query";
+import { Star } from "lucide-react";
 import newRequest from "../../utils/newRequest";
+import { Avatar } from "../ui/ui";
 
 const Review = ({ review }) => {
-   const { isLoading, error, data } = useQuery({
-      queryKey: [review.userId],
-      queryFn: () =>
-         newRequest.get(`/users/${review.userId}`).then((res) => {
-            return res.data;
-         }),
+   const { data } = useQuery({
+      queryKey: ["user", review.userId],
+      queryFn: () => newRequest.get(`/users/${review.userId}`).then((res) => res.data),
    });
    return (
-      <div className="flex flex-col gap-5 my-5">
-         {isLoading ? (
-            <div className="flex flex-col gap-4 w-full h-screen items-center justify-center">
-               <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                  <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-               </div>
-            </div>
-         ) : error ? (
-            "Something went wrong!"
-         ) : (
-            <div className="flex items-center">
-               <img
-                  className="h-[50px] w-[50px] rounded-full object-cover"
-                  src={data.img || "/img/avatar.png"}
-                  alt=""
-               />
-               <div className="ml-4">
-                  <span className="block font-semibold">{data.username}</span>
-                  <div className="flex items-center gap-2 text-gray-500">
-                     {/* If you want to show a flag, add <img src="..." alt="" className="w-5" /> here */}
-                     <span>{data.country}</span>
-                  </div>
-               </div>
-            </div>
-         )}
-         <div className="flex items-center gap-1">
-            {Array(review.star)
-               .fill()
-               .map((item, i) => (
-                  <img
-                     src="/img/star.png"
-                     alt=""
-                     key={i}
-                     className="h-[14px] w-[14px]"
-                  />
-               ))}
-            <span className="text-[14px] font-bold text-[#ffc108] ml-1">
+      <article className="flex flex-col gap-2 border-t border-[#f0e3d9] py-4">
+         <div className="flex items-center gap-2.5">
+            <Avatar user={data} size={36} />
+            <span className="flex min-w-0 flex-col">
+               <strong className="text-[15px]">{data?.username || "Former customer"}</strong>
+               <span className="text-[13px] text-muted">
+                  {data?.country ? `${data.country} · ` : ""}
+                  {moment(review.createdAt).fromNow()}
+               </span>
+            </span>
+            <span className="flex-1" />
+            <span className="flex items-center gap-1 text-sm font-bold" aria-label={`${review.star} out of 5 stars`}>
+               <Star size={15} className="fill-[#e0a100] text-[#e0a100]" aria-hidden="true" />
                {review.star}
             </span>
          </div>
-         <p>{review.desc}</p>
-      </div>
+         <p className="m-0 whitespace-pre-line text-[15px] leading-relaxed text-[#3e2219]">{review.desc}</p>
+      </article>
    );
 };
 

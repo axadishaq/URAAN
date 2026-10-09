@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyToken, verifyAdmin } from "../middleware/jwt.js";
+import { verifyToken } from "../middleware/jwt.js";
 import {
    createGig,
    deleteGig,
@@ -11,15 +11,10 @@ import {
 const router = express.Router();
 
 router.post("/creategig", verifyToken, createGig);
+// owner or admin (checked in the controller)
 router.delete("/:id", verifyToken, deleteGig);
-// router.get("/single/:id", verifyToken, getGig);
 router.get("/single/:id", getGig);
 router.get("/", getGigs);
 router.get("/country/:country", getGigsByCountry);
-
-//admin routes
-// router.put("/gigs/:id", verifyToken, verifyAdmin, updateGig);
-
-router.delete("/:id", verifyToken, verifyAdmin, deleteGig);
 
 export default router;

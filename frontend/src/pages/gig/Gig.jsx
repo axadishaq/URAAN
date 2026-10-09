@@ -1,435 +1,260 @@
 import React, { useState } from "react";
-
 import moment from "moment";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Clock, MapPin, MessageCircle, RefreshCw, Star } from "lucide-react";
 
-import { Slider } from "infinite-react-carousel/lib";
-import { Link, useNavigate, useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import newRequest from "../../utils/newRequest";
+import newRequest, { getErrorMessage } from "../../utils/newRequest";
+import { getCurrentUser } from "../../utils/currentUser";
+import { categoryLabel } from "../../utils/categories";
+import { formatPrice, ratingText } from "../../utils/format";
 import Reviews from "../../components/reviews/Reviews";
-import Alert from "../../components/Alert/Alert"; // adjust path as needed
+import { Avatar, Breadcrumb, EmptyState, Notice, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
+
+const card = "rounded-2xl border border-line bg-white p-6";
 
 function Gig() {
    const { id } = useParams();
-   // console.log(id);
-   const nevigate = useNavigate();
-   const [orderMessage, setOrderMessage] = useState(null); // for alert
+   const navigate = useNavigate();
+   const queryClient = useQueryClient();
+   const toast = useToast();
+   const currentUser = getCurrentUser();
+   const [message, setMessage] = useState(null);
+   const [busy, setBusy] = useState(false);
+   const [activeImage, setActiveImage] = useState(0);
 
    const { isLoading, error, data } = useQuery({
-      queryKey: ["gig"],
-      queryFn: () =>
-         newRequest.get(`/gigs/single/${id} `).then((res) => {
-            return res.data;
-         }),
+      queryKey: ["gig", id],
+      queryFn: () => newRequest.get(`/gigs/single/${id}`).then((res) => res.data),
    });
 
    const userId = data?.userId;
-
-   const {
-      isLoading: isLoadingUser,
-      error: errorUser,
-      data: dataUser,
-   } = useQuery({
+   const { data: seller } = useQuery({
       queryKey: ["user", userId],
-      queryFn: () =>
-         newRequest.get(`/users/${userId} `).then((res) => {
-            return res.data;
-         }),
+      queryFn: () => newRequest.get(`/users/${userId}`).then((res) => res.data),
       enabled: !!userId,
    });
 
-   const handleCreateOrder = async () => {
-      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-      if (!currentUser) {
-         alert("Please log in to create an order.");
-         return;
-      }
+   if (isLoading) return <Spinner label="Loading service" />;
+   if (error)
+      return (
+         <div className="mx-auto max-w-xl px-4 py-16">
+            <EmptyState
+               title={getErrorMessage(error, "Service not found.")}
+               text="It may have been removed by its provider."
+               action={
+                  <Link to="/gigs" className={btn.secondary}>
+                     Browse services
+                  </Link>
+               }
+            />
+         </div>
+      );
+
+   const isOwner = currentUser && currentUser._id === data.userId;
+   const images = [...new Set([data.cover, ...(data.images || [])].filter(Boolean))];
+   const city = data.country || seller?.country;
+   const sellerName = seller?.username || data.shortTitle;
+
+   const requireLogin = (text) => {
+      toast({ type: "info", title: "Please log in first", text });
+      navigate("/login", { state: { from: { pathname: `/gig/${id}` } } });
+   };
+
+   const handleOrder = async () => {
+      if (!currentUser) return requireLogin("You need an account to order a service.");
+      setBusy(true);
+      setMessage(null);
       try {
-         await newRequest.post(`/orders/${id}`, {
-            gigId: id,
-            sellerId: data.userId,
-            buyerId: currentUser._id,
-            deliveryTime: data.deliveryTime,
-         });
-         alert("Order has been created!");
-         setOrderMessage({ type: "success", text: "Order has been created!" });
-         setTimeout(() => setOrderMessage(null), 1000);
-         nevigate("/orders"); // Redirect to orders page after creating order
+         await newRequest.post(`/orders/${id}`);
+         queryClient.invalidateQueries({ queryKey: ["orders"] });
+         toast({ title: "Order placed", text: `${sellerName} can see it now. Agree on the details in chat.` });
+         navigate("/orders");
       } catch (err) {
-         if (
-            err?.response?.status === 401 ||
-            err?.response?.data?.message?.includes("not authorized!")
-         ) {
-            alert("You are not authorized to create an order.");
-            return;
-         } else {
-            setOrderMessage({
-               type: "error",
-               text: err?.response?.data?.message || "Failed to create order.",
-            });
-         }
+         setMessage(getErrorMessage(err, "Failed to create order."));
+         setBusy(false);
       }
    };
 
-   // const handleCreateOrder = async () => {
-   //    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+   const handleContact = async () => {
+      if (!currentUser) return requireLogin("You need an account to message a provider.");
+      try {
+         const res = await newRequest.post(`/conversations`, { to: data.userId });
+         navigate(`/message/${res.data.id}`);
+      } catch (err) {
+         setMessage(getErrorMessage(err, "Could not start a conversation."));
+      }
+   };
 
-   //    try {
-   //       await newRequest.post(`/orders/${id}`, {
-   //          gigId: id,
-   //          sellerId: data.userId,
-   //          buyerId: currentUser._id,
-   //       });
-   //       alert("Order has been created!");
-
-   //       setOrderMessage({ type: "success", text: "Order has been created!" });
-
-   //       // Optional: auto-hide after 3 seconds
-   //       setTimeout(() => setOrderMessage(null), 3000);
-   //    } catch (err) {
-   //       console.log(err);
-   //       setOrderMessage({
-   //          type: "error",
-   //          text: err?.response?.data?.message || "Failed to create order.",
-   //       });
-   //    }
-   // };
    return (
-      <div className="bg-theme-light py-12 px-4 sm:px-6 lg:px-8">
-         {isLoading ? (
-            <>
-               {/* <!-- From Uiverse.io by devAaus -->  */}
-               <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-                  <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                     <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-                  </div>
-               </div>
-            </>
-         ) : error ? (
-            "Something went wrong!"
-         ) : (
-            <div className="max-w-7xl mx-auto">
-               <div className="flex flex-col">
-                  <h1 className="text-3xl font-bold text-theme-dark mb-8">
-                     {data.title}
-                  </h1>
-                  {isLoadingUser ? (
-                     <>
-                        {/* <!-- From Uiverse.io by sahilxkhadka -->  */}
-                        <div className="relative flex w-64 animate-pulse gap-2 p-4">
-                           <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-                           <div className="flex-1">
-                              <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-                              <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-                           </div>
-                           <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-                        </div>
-                     </>
-                  ) : errorUser ? (
-                     "Something went wrong!"
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 pb-16 pt-7 sm:px-5">
+            <Breadcrumb
+               items={[
+                  { label: "Home", to: "/" },
+                  { label: categoryLabel(data.category), to: `/gigs?category=${data.category}` },
+                  { label: data.title },
+               ]}
+            />
+
+            <div className="flex flex-col gap-3.5">
+               <h1 className="m-0 font-display text-3xl font-bold leading-tight tracking-tight sm:text-[40px]">
+                  {data.title}
+               </h1>
+               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-muted">
+                  <span className="flex items-center gap-2.5">
+                     <Avatar user={seller} name={sellerName} size={36} />
+                     <strong className="text-ink">{sellerName}</strong>
+                  </span>
+                  {data.starNumber > 0 ? (
+                     <span className="flex items-center gap-1">
+                        <Star size={16} className="fill-[#e0a100] text-[#e0a100]" aria-hidden="true" />
+                        <strong className="text-ink">{ratingText(data)}</strong> ({data.starNumber}{" "}
+                        {data.starNumber === 1 ? "review" : "reviews"})
+                     </span>
                   ) : (
-                     <div className="p-4">
-                        {/* <!-- User Info --> */}
-                        <div className="flex items-center gap-5 ">
-                           <img
-                              src={dataUser.img || "/img/avatar.png"}
-                              alt="User"
-                              className="w-10 h-10 rounded-full object-contain"
-                           />
-                           <span className="text-sm text-theme-dark font-medium">
-                              {dataUser.username}
-                           </span>
-                        </div>
-                        {!isNaN(data.totalStars / data.starNumber) && (
-                           <div className="flex items-center gap-1 ">
-                              {Array(
-                                 Math.round(data.totalStars / data.starNumber)
-                              )
-                                 .fill()
-                                 .map((item, i) => (
-                                    <img
-                                       src="/img/star.png"
-                                       alt=""
-                                       key={i}
-                                       className="h-4 w-4"
-                                    />
-                                 ))}
-
-                              <span className="text-theme-medium ml-2 text-sm">
-                                 {Math.round(data.totalStars / data.starNumber)}
-                              </span>
-                           </div>
-                        )}
-                     </div>
+                     <span>No reviews yet</span>
                   )}
-               </div>
-               {/* Service Details Container */}
-               <div className="flex flex-col-reverse lg:flex-row gap-8">
-                  {/* Service Details */}
-                  <div className="lg:w-2/3">
-                     {/* Main Image Gallery */}
-                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div className=" mb-4  rounded-lg"></div>
-                        <Slider
-                           slidesToShow={1}
-                           arrowsScroll={1}
-                           className="h-auto ">
-                           {data?.images?.map((img) => (
-                              <img
-                                 key={img}
-                                 src={img}
-                                 alt=""
-                                 className="h-120 my-auto object-contain"
-                              />
-                           ))}
-                        </Slider>
-                     </div>
-
-                     {/* Service Description */}
-                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <h3 className="text-2xl font-bold text-theme-dark mb-4">
-                           Service Description
-                        </h3>
-                        <p className="text-theme-medium mb-6">{data.desc}</p>
-
-                        <h4 className="text-xl font-bold text-theme-dark mb-3">
-                           Features
-                        </h4>
-                        <ul className="list-disc pl-6 text-theme-medium mb-6 space-y-2">
-                           {data?.features?.map((feature) => (
-                              <li key={feature}>{feature}</li>
-                           ))}
-                        </ul>
-
-                        {/* <h4 className="text-xl font-bold text-theme-dark mb-3">
-                           Why Choose Our Service
-                        </h4>
-                        <ul className="list-disc pl-6 text-theme-medium space-y-2">
-                           <li>
-                              Over 5 years of experience in delivering
-                              high-quality solutions
-                           </li>
-                           <li>
-                              Portfolio of 200+ successful projects across
-                              various industries
-                           </li>
-                           <li>
-                              Team of certified professionals with expertise in
-                              modern technologies
-                           </li>
-                           <li>
-                              Commitment to deadlines and transparent
-                              communication throughout the project
-                           </li>
-                        </ul> */}
-                     </div>
-                     {/* about the seller  */}
-                     {isLoadingUser ? (
-                        <>
-                           {/* <!-- From Uiverse.io by sahilxkhadka -->  */}
-                           <div className="relative flex w-64 animate-pulse gap-2 p-4">
-                              <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-                              <div className="flex-1">
-                                 <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-                                 <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-                              </div>
-                              <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-                           </div>
-                        </>
-                     ) : errorUser ? (
-                        "Something went wrong!"
-                     ) : (
-                        <div className="bg-white text-xl font-semibold rounded-lg shadow-md p-6 mb-6">
-                           <h2>About The Seller</h2>
-                           <>
-                              <div className="p-4">
-                                 {/* <!-- User Info --> */}
-                                 <div className="flex items-center gap-5 ">
-                                    <img
-                                       src={dataUser.img || "/img/avatar.png"}
-                                       alt="User"
-                                       className="w-10 h-10 rounded-full object-contain"
-                                    />
-                                    <span className="text-sm text-theme-dark font-medium">
-                                       {dataUser.username}
-                                    </span>
-                                 </div>
-                                 {!isNaN(data.totalStars / data.starNumber) && (
-                                    <div className="flex items-center gap-1 ">
-                                       {Array(
-                                          Math.round(
-                                             data.totalStars / data.starNumber
-                                          )
-                                       )
-                                          .fill()
-                                          .map((item, i) => (
-                                             <img
-                                                src="/img/star.png"
-                                                alt=""
-                                                key={i}
-                                                className="h-4 w-4"
-                                             />
-                                          ))}
-
-                                       <span className="text-theme-medium ml-2 text-sm">
-                                          {Math.round(
-                                             data.totalStars / data.starNumber
-                                          )}
-                                       </span>
-                                    </div>
-                                 )}
-                                 <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-                                    {dataUser ? dataUser.country : ""}
-                                 </span>
-                                 <br />
-                                 <button className="text-sm text-white rounded-lg mt-4 p-2 border-2 transition-all duration-500 bg-theme-dark  hover:bg-theme-light hover:text-theme-dark">
-                                    Contact Me
-                                 </button>
-                              </div>
-
-                              <hr />
-                              <p>{dataUser.desc}</p>
-                           </>
-                        </div>
-                     )}
-
-                     {/* Reviews and Ratings */}
-                     <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex justify-between items-center mb-6">
-                           <h3 className="text-2xl font-bold text-theme-dark">
-                              Reviews
-                           </h3>
-                           <div className="flex items-center">
-                              <div className="flex items-center mr-2">
-                                 <img src="/img/star.png" alt="" />
-                              </div>
-                              <span className="text-theme-medium font-semibold">
-                                 {Math.round(data.totalStars / data.starNumber)}
-                                 {"("}
-                                 {data.starNumber} reviews{")"}
-                              </span>
-                           </div>
-                        </div>
-
-                        {/* Individual Reviews */}
-                        <div className="space-y-6">
-                           <Reviews gigId={id} />
-                           {/* Load More Reviews Button */}
-                           <div className="mt-8 flex justify-center">
-                              <button className="border border-theme-accent text-theme-accent hover:bg-theme-accent hover:text-theme-dark px-6 py-2 rounded-md transition-colors duration-300 font-medium">
-                                 Load More Reviews
-                              </button>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  {/* Service Summary Card (Sticky) */}
-                  <div className="lg:w-1/3 lg:sticky lg:top-8 lg:self-start">
-                     <div className="bg-white overflow-hidden relative p-6 rounded-xl shadow-sm hover:shadow-lg/30 transition-all duration-500">
-                        <div className="absolute top-2 right-2">
-                           <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-8 w-8"
-                              fill="orange"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2">
-                              <path
-                                 strokeLinecap="round"
-                                 strokeLinejoin="round"
-                                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                              />
-                           </svg>
-                        </div>
-
-                        {/* Price & Category Tags */}
-                        <div>
-                           <div className="flex gap-2">
-                              <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-                                 Premium
-                              </span>
-                              <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-                                 {dataUser ? dataUser.country : ""}
-                              </span>
-                           </div>
-                        </div>
-                        {isLoadingUser ? (
-                           <>
-                              {/* <!-- From Uiverse.io by sahilxkhadka -->  */}
-                              <div className="relative flex w-64 animate-pulse gap-2 p-4">
-                                 <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-                                 <div className="flex-1">
-                                    <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-                                    <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-                                 </div>
-                                 <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-                              </div>
-                           </>
-                        ) : errorUser ? (
-                           "Something went wrong!"
-                        ) : (
-                           <div className="flex items-start justify-arround item-center mb-4 mt-4">
-                              <div className="w-12 h-12 bg-gray-100 rounded my-auto flex items-center justify-center">
-                                 <img
-                                    src={
-                                       dataUser && dataUser.img
-                                          ? dataUser.img
-                                          : "/img/avatar.png"
-                                    }
-                                    alt="Service Provider Logo"
-                                    className="w-full h-full object-contain rounded-full"
-                                 />
-                              </div>
-                              <h3 className="font-semibold text-xl m-2">
-                                 {data.shortTitle}
-                              </h3>
-                           </div>
-                        )}
-                        {/* Provider Info */}
-                        <div className="flex items-center text-theme-medium mb-3">
-                           <span></span>
-                           <span className="mx-1 font-bold text-xl">•</span>
-                           <span>
-                              Since{" "}
-                              {dataUser && dataUser.createdAt
-                                 ? moment(dataUser.createdAt).format(
-                                      "MMMM YYYY"
-                                   )
-                                 : ""}
-                           </span>
-                        </div>
-                        <div className="flex items-center text-theme-medium mb-3">
-                           <img
-                              src="/img/clock.png"
-                              alt=""
-                              className="w-4 h-4 mr-2"
-                           />
-                           <span>
-                              {data.deliveryTime
-                                 ? `${data.deliveryTime} Days Delivery`
-                                 : "Delivery time depends on work."}
-                           </span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="flex justify-between items-center">
-                           <span className="font-semibold text-xl text-theme-dark">
-                              Rs. {data.price}
-                           </span>
-                        </div>
-
-                        {/* Order Button */}
-                        <div className="flex justify-center items-center text-white rounded-lg mt-4 p-2 border-3 transition-all duration-500 bg-theme-dark font-bold hover:bg-theme-light hover:border-amber-900 hover:text-theme-dark">
-                           <button
-                              onClick={() => handleCreateOrder()}
-                              className="">
-                              Continue
-                           </button>
-                        </div>
-                     </div>
-                  </div>
+                  {city && (
+                     <span className="flex items-center gap-1">
+                        <MapPin size={16} aria-hidden="true" />
+                        {city}
+                     </span>
+                  )}
+                  {data.sales > 0 && <span>{data.sales} orders</span>}
                </div>
             </div>
-         )}
+
+            {message && <Notice onClose={() => setMessage(null)}>{message}</Notice>}
+
+            <div className="flex flex-col-reverse items-start gap-8 lg:flex-row">
+               <div className="flex w-full min-w-0 flex-1 flex-col gap-6">
+                  {images.length > 0 && (
+                     <section aria-label="Photos" className="flex flex-col gap-3">
+                        <Picture
+                           src={images[Math.min(activeImage, images.length - 1)]}
+                           alt={data.title}
+                           className="h-72 w-full rounded-2xl bg-white object-contain sm:h-[420px]"
+                        />
+                        {images.length > 1 && (
+                           <div className="flex flex-wrap gap-2.5">
+                              {images.map((img, i) => (
+                                 <button
+                                    type="button"
+                                    key={img}
+                                    onClick={() => setActiveImage(i)}
+                                    aria-label={`Show photo ${i + 1}`}
+                                    aria-pressed={i === activeImage}
+                                    className={`overflow-hidden rounded-[10px] border-2 ${
+                                       i === activeImage ? "border-ink" : "border-transparent"
+                                    }`}>
+                                    <img src={img} alt="" className="h-16 w-24 object-cover" />
+                                 </button>
+                              ))}
+                           </div>
+                        )}
+                     </section>
+                  )}
+
+                  <section className={`${card} flex flex-col gap-3.5`}>
+                     <h2 className="m-0 text-[22px] font-bold">About this service</h2>
+                     <p className="m-0 whitespace-pre-line text-base leading-relaxed text-[#3e2219]">{data.desc}</p>
+                     {data.features?.length > 0 && (
+                        <>
+                           <h3 className="mb-0 mt-2 text-[17px] font-bold">What's included</h3>
+                           <ul className="m-0 grid list-none grid-cols-1 gap-2.5 p-0 sm:grid-cols-2">
+                              {data.features.map((f) => (
+                                 <li key={f} className="flex items-center gap-2.5 text-[15px]">
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success-bg text-success">
+                                       <Check size={14} strokeWidth={3} aria-hidden="true" />
+                                    </span>
+                                    {f}
+                                 </li>
+                              ))}
+                           </ul>
+                        </>
+                     )}
+                  </section>
+
+                  <section className={`${card} flex flex-wrap items-start gap-5`}>
+                     <Avatar user={seller} name={sellerName} size={64} />
+                     <div className="flex min-w-[240px] flex-1 flex-col gap-2">
+                        <h2 className="m-0 text-xl font-bold">About {data.shortTitle || sellerName}</h2>
+                        <span className="text-sm text-muted">
+                           {[seller?.username !== data.shortTitle && seller?.username, city, seller?.createdAt && `On URAAN since ${moment(seller.createdAt).format("MMMM YYYY")}`]
+                              .filter(Boolean)
+                              .join(" · ")}
+                        </span>
+                        {(data.shortDesc || seller?.desc) && (
+                           <p className="m-0 text-[15px] leading-relaxed text-[#3e2219]">{seller?.desc || data.shortDesc}</p>
+                        )}
+                     </div>
+                     {!isOwner && (
+                        <button type="button" onClick={handleContact} className={`${btn.small} border-ink`}>
+                           <MessageCircle size={18} aria-hidden="true" />
+                           Contact Me
+                        </button>
+                     )}
+                  </section>
+
+                  <section className={`${card} flex flex-col gap-5`}>
+                     <h2 className="m-0 text-[22px] font-bold">Reviews</h2>
+                     <Reviews gigId={id} sellerId={data.userId} />
+                  </section>
+               </div>
+
+               <aside
+                  aria-label="Order this service"
+                  className="w-full shrink-0 rounded-2xl border border-line bg-white p-6 shadow-[0_8px_24px_rgba(43,13,7,0.06)] lg:sticky lg:top-24 lg:w-[360px]">
+                  <div className="flex flex-col gap-4">
+                     <div className="flex items-baseline justify-between">
+                        <span className="text-sm text-muted">Price</span>
+                        <span className="font-display text-[32px] font-bold">{formatPrice(data.price)}</span>
+                     </div>
+                     <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[15px]">
+                        <li className="flex items-center gap-2.5">
+                           <Clock size={18} className="text-muted" aria-hidden="true" />
+                           {data.deliveryTime
+                              ? `Delivered in ${data.deliveryTime} ${data.deliveryTime === 1 ? "day" : "days"}`
+                              : "Delivery time agreed in chat"}
+                        </li>
+                        {data.revisionNumber > 0 && (
+                           <li className="flex items-center gap-2.5">
+                              <RefreshCw size={18} className="text-muted" aria-hidden="true" />
+                              {data.revisionNumber} {data.revisionNumber === 1 ? "revision" : "revisions"} included
+                           </li>
+                        )}
+                        {city && (
+                           <li className="flex items-center gap-2.5">
+                              <MapPin size={18} className="text-muted" aria-hidden="true" />
+                              Serves {city}
+                           </li>
+                        )}
+                     </ul>
+                     {isOwner ? (
+                        <p className="m-0 rounded-xl bg-cream p-3 text-center text-[15px] text-muted">
+                           This is your service.
+                        </p>
+                     ) : (
+                        <>
+                           <button type="button" onClick={handleOrder} disabled={busy} className={`${btn.primary} h-[52px] w-full`}>
+                              {busy ? "Placing order..." : `Order now · ${formatPrice(data.price)}`}
+                           </button>
+                           <button type="button" onClick={handleContact} className={`${btn.secondary} w-full`}>
+                              Message provider first
+                           </button>
+                        </>
+                     )}
+                     <p className="m-0 text-[13px] leading-normal text-muted">
+                        No payment is taken online yet. After ordering, agree on the time and payment with
+                        the provider in chat.
+                     </p>
+                  </div>
+               </aside>
+            </div>
+         </div>
       </div>
    );
 }

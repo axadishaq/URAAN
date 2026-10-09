@@ -1,0 +1,28 @@
+# Render Blueprint for the URAAN API (free plan).
+# In Render: New > Blueprint > pick this repo. You will be asked only for MONGO.
+services:
+  - type: web
+    name: uraan-api
+    runtime: node
+    plan: free
+    rootDir: api
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/courses
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Frontend sites allowed to call the API directly (comma separated)
+      - key: CLIENT_URL
+        value: https://uraan-pink.vercel.app,https://uraaan.netlify.app
+      # Render creates a long random secret for signing login tokens
+      - key: JWT_KEY
+        generateValue: true
+      # MongoDB Atlas connection string, entered when the Blueprint is created
+      - key: MONGO
+        sync: false
+      # Optional: user id that always gets admin rights
+      - key: ADMIN_ID
+        sync: false

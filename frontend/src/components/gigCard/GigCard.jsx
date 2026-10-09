@@ -1,128 +1,56 @@
 import React from "react";
-import "./GigCard.scss";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Clock, Star } from "lucide-react";
 import newRequest from "../../utils/newRequest";
+import { formatPrice, ratingText } from "../../utils/format";
+import { Avatar, Badge, Picture } from "../ui/ui";
 
 const GigCard = ({ item }) => {
-   // const {id} = useParams();
-   const { isLoading, error, data } = useQuery({
-      queryKey: ["gigUser", item.userId],
-      queryFn: () =>
-         newRequest.get(`/users/${item.userId}`).then((res) => {
-            return res.data;
-         }),
+   const { data: seller } = useQuery({
+      queryKey: ["user", item.userId],
+      queryFn: () => newRequest.get(`/users/${item.userId}`).then((res) => res.data),
+      enabled: !!item.userId,
    });
+   const city = item.country || seller?.country;
 
    return (
-      <>
-         {/* <Link to={`/gig/${item._id}`} className="link">
-            <div className="gigCard">
-               <img src={item.cover} alt="" />
-               <div className="info">
-                  {isLoading ? (
-                     "loading..."
-                  ) : error ? (
-                     "Something went wrong!"
-                  ) : (
-                     <div className="user">
-                        <img src={data.img || "/img/avatar.png"} alt="" />
-                        <span>{data.username}</span>
-                     </div>
-                  )}
-                  <p>{item.desc}</p>
-                  <div className="star">
-                     <img src="./img/star.png" alt="" />
-                     <span>
-                        {!isNaN(item.totalStars / item.starNumber) &&
-                           Math.round(item.totalStars / item.starNumber)}
-                     </span>
-                  </div>
-               </div>
-               <hr />
-               <div className="detail">
-                  <img src="./img/heart.png" alt="" />
-                  <div className="price">
-                     <span>STARTING AT</span>
-                     <h2>$ {item.price}</h2>
-                  </div>
-               </div>
+      <Link
+         to={`/gig/${item._id}`}
+         className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white text-ink transition-shadow hover:shadow-[0_10px_28px_rgba(43,13,7,0.10)]">
+         <Picture src={item.cover} alt="" className="h-44 w-full" />
+         <div className="flex flex-1 flex-col gap-2.5 p-4">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted">
+               <Avatar user={seller} name={item.shortTitle} size={28} />
+               <span className="truncate font-semibold text-ink">{seller?.username || item.shortTitle}</span>
+               {city && <span className="shrink-0">· {city}</span>}
             </div>
-         </Link> */}
-         <Link to={`/gig/${item._id}`} class="block transition-all">
-            <div class="bg-white rounded-lg overflow-hidden shadow-lg duration-300 hover:transform hover:scale-103">
-               {/* <!-- Gig Cover Image --> */}
-               <div class="relative h-46">
-                  <img
-                     src={item.cover}
-                     alt="Gig Cover"
-                     class="w-full h-full object-cover"
-                  />
-               </div>
-
-               {/* <!-- Info Section --> */}
-               <div class="p-4 bg-white">
-                  {/* <!-- User Info --> */}
-                  {isLoading ? (
-                        <div className="relative flex w-64 animate-pulse gap-2 p-4">
-                           <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-                           <div className="flex-1">
-                              <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-                              <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-                           </div>
-                           <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-                        </div>
-                  ) : error ? (
-                     "Something went wrong!"
-                  ) : (
-                     <div class="flex items-center gap-2 mb-3">
-                        <img
-                           src={data.img || "/img/avatar.png"}
-                           alt="User"
-                           class="w-8 h-8 rounded-full object-cover"
-                        />
-                        <span class="text-sm text-theme-dark font-medium">
-                           {data.username}
-                        </span>
-                     </div>
-                  )}
-
-                  {/* <!-- Description --> */}
-                  <h1 class="text-theme-dark font-semibold mb-3 text-lg line-clamp-2">
-                     {item.title}
-                  </h1>
-                  <p class="text-theme-light  text-sm line-clamp-2">
-                     {item.desc}{" "}
-                  </p>
-               </div>
-
-               {/* <!-- Divider --> */}
-               <hr class="border-theme-accent" />
-
-               {/* <!-- Detail Section --> */}
-               <div class="p-4 flex justify-between items-center">
-                  <div class="text-right">
-                     <span class="text-xs text-theme-medium block">
-                        STARTING FROM
-                     </span>
-                     <h2 class="text-xl font-bold text-theme-dark">
-                        Rs. {item.price}
-                     </h2>
-                  </div>
-                  {/* <!-- Rating --> */}
-                  <div class="flex items-center gap-1">
-                     <div class="flex text-yellow-400">
-                        <img src="./img/star.png" alt="" className="h-5 w-5" />
-                     </div>
-                     <span class="text-theme-medium text-sm">
-                        {!isNaN(item.totalStars / item.starNumber) &&
-                           Math.round(item.totalStars / item.starNumber)}
-                     </span>
-                  </div>
-               </div>
+            <h3 className="m-0 text-[17px] font-semibold leading-snug group-hover:underline">{item.title}</h3>
+            <div className="flex-1" />
+            <div className="flex items-center gap-2 text-sm">
+               {item.starNumber > 0 ? (
+                  <span className="flex items-center gap-1">
+                     <Star size={16} className="fill-[#e0a100] text-[#e0a100]" aria-hidden="true" />
+                     <strong>{ratingText(item)}</strong>
+                     <span className="text-muted">({item.starNumber})</span>
+                  </span>
+               ) : (
+                  <Badge tone="info">New</Badge>
+               )}
+               <span className="flex-1" />
+               {item.deliveryTime > 0 && (
+                  <span className="flex items-center gap-1 text-muted">
+                     <Clock size={15} aria-hidden="true" />
+                     {item.deliveryTime} {item.deliveryTime === 1 ? "day" : "days"}
+                  </span>
+               )}
             </div>
-         </Link>
-      </>
+            <div className="flex items-baseline justify-between border-t border-[#f0e3d9] pt-2.5">
+               <span className="text-[13px] text-muted">Starting at</span>
+               <span className="text-lg font-bold">{formatPrice(item.price)}</span>
+            </div>
+         </div>
+      </Link>
    );
 };
 

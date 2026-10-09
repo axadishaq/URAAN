@@ -1,19 +1,15 @@
 #root {
-   width: auto;
-   margin: 0 auto;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
 }
 
-/* CSS Animation .io */
-
-.leFlyInLeft {
-   animation: leFlyInLeft 4s ease-in-out;
+.app {
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
 }
-@keyframes leFlyInLeft {
-   0% {
-      transform: translate(-40px, 0px);
-      opacity: 0;
-   }
-   50% {
-      transform: translate(40px, 0px);
-   }
+
+.app > main {
+   flex: 1 0 auto;
 }

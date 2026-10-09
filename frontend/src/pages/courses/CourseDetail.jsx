@@ -1,182 +1,137 @@
-// import React, { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
-// import axios from "axios";
-
-// const CourseDetail = () => {
-//    const { id } = useParams();
-//    const [course, setCourse] = useState(null);
-//    const [loading, setLoading] = useState(true);
-//    const [error, setError] = useState(null);
-
-//    useEffect(() => {
-//       const fetchCourse = async () => {
-//          try {
-//             const res = await axios.get(
-//                `http://localhost:8800/api/courses/${id}`
-//             );
-//             setCourse(res.data);
-//          } catch (err) {
-//             setError("Course not found");
-//          } finally {
-//             setLoading(false);
-//          }
-//       };
-//       fetchCourse();
-//    }, [id]);
-
-//    if (loading)
-//       return (
-//          <>
-//             {/* Loader  */}
-//             <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-//                <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-//                   <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-//                </div>
-//             </div>
-//          </>
-//       );
-//    if (error) return <div>{error}</div>;
-//    if (!course) return <div>No course data.</div>;
-
-//    return (
-//       <div className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-lg mt-10">
-//          <img
-//             src={course.coverImage || "/img/avatar.png"}
-//             alt={course.title}
-//             className="w-full h-64 object-cover rounded-md mb-6"
-//          />
-//          <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-//          <p className="mb-4 text-theme-medium">{course.description}</p>
-//          <div className="mb-2">
-//             <span className="bg-gray-100 text-theme-medium px-3 py-1 rounded-full text-sm mr-2">
-//                {course.category}
-//             </span>
-//             <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-//                {course.level}
-//             </span>
-//          </div>
-//          <div className="font-semibold text-theme-medium mb-4">
-//             Rs. {course.price}
-//          </div>
-//          <div>
-//             {/* <h2 className="text-xl font-semibold mb-2">Content</h2>
-//             <ul className="list-disc pl-6">
-//                {course.content?.map((item, idx) => (
-//                   <li key={idx}>
-//                      <strong>{item.title}</strong> ({item.duration} min)
-//                   </li>
-//                ))}
-//             </ul> */}
-//          </div>
-//       </div>
-//    );
-// };
-
-// export default CourseDetail;
-
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import newRequest from "../../utils/newRequest.js";
+import React, { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Users } from "lucide-react";
+import newRequest, { getErrorMessage } from "../../utils/newRequest.js";
+import { getCurrentUser } from "../../utils/currentUser";
+import { categoryLabel } from "../../utils/categories";
+import { formatPrice } from "../../utils/format";
+import { Avatar, Badge, Breadcrumb, EmptyState, Notice, Picture, Spinner } from "../../components/ui/ui";
+import { btn } from "../../components/ui/styles";
+import { useToast } from "../../components/ui/Toast";
 
 const CourseDetail = () => {
-   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-   const userId = currentUser?._id || currentUser?.id;
-   //    const token = localStorage.getItem("token") || currentUser?.token;
-
+   const currentUser = getCurrentUser();
+   const userId = currentUser?._id;
    const { id } = useParams();
-   const [course, setCourse] = useState(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState(null);
-   const [enrollMsg, setEnrollMsg] = useState("");
-   // Replace with your auth logic
    const navigate = useNavigate();
-   useEffect(() => {
-      const fetchCourse = async () => {
-         try {
-            const res = await newRequest.get(
-               `/courses/${id}`
-            );
-            setCourse(res.data);
-         } catch (err) {
-            setError("Course not found");
-         } finally {
-            setLoading(false);
-         }
-      };
-      fetchCourse();
-   }, [id]);
-   // console.log(userId, id);
+   const queryClient = useQueryClient();
+   const toast = useToast();
+   const [enrollMsg, setEnrollMsg] = useState("");
+   const [enrolling, setEnrolling] = useState(false);
+
+   const { isLoading, error, data: course } = useQuery({
+      queryKey: ["course", id],
+      queryFn: () => newRequest.get(`/courses/${id}`).then((res) => res.data),
+   });
+   const { data: owner } = useQuery({
+      queryKey: ["user", course?.userId],
+      queryFn: () => newRequest.get(`/users/${course.userId}`).then((res) => res.data),
+      enabled: !!course?.userId,
+   });
+   // Is the user already enrolled?
+   const { data: status } = useQuery({
+      queryKey: ["enrollment-status", id, userId],
+      queryFn: () => newRequest.get(`/enrollments/status/${id}`).then((res) => res.data),
+      enabled: !!userId,
+   });
+   const enrolled = status?.enrolled;
+
+   if (isLoading) return <Spinner label="Loading course" />;
+   if (error)
+      return (
+         <div className="mx-auto max-w-xl px-4 py-16">
+            <EmptyState
+               title={getErrorMessage(error, "Course not found")}
+               action={
+                  <Link to="/courses" className={btn.secondary}>
+                     Back to courses
+                  </Link>
+               }
+            />
+         </div>
+      );
+
+   const isOwner = userId && course.userId === userId;
+
    const handleEnroll = async () => {
-      //   console.log(localStorage.getItem("currentUser"));
-      if (!currentUser || !userId) {
-         setEnrollMsg("You must be logged in to enroll.");
-         alert("You must be logged in to enroll.");
+      if (!userId) {
+         toast({ type: "info", title: "Please log in first", text: "You need an account to enroll." });
+         navigate("/login", { state: { from: { pathname: `/courses/${id}` } } });
          return;
       }
+      setEnrolling(true);
+      setEnrollMsg("");
       try {
-         await newRequest.post("http://localhost:8800/api/enrollments", {
-            userId: userId,
-            courseId: id,
-         });
-         setEnrollMsg("Enrolled successfully!");
-         alert("Enrolled successfully");
-         navigate("/myenrollments"); // Redirect to my courses page
+         await newRequest.post("/enrollments", { courseId: id });
+         queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+         queryClient.invalidateQueries({ queryKey: ["enrollment-status", id] });
+         queryClient.invalidateQueries({ queryKey: ["course", id] });
+         toast({ title: "Enrolled successfully", text: `"${course.title}" is now in My learning.` });
+         navigate("/myenrollments");
       } catch (err) {
-         setEnrollMsg(err.response?.data?.message || "Enrollment failed");
-         alert(err.response?.data?.message || "Enrollment failed");
+         setEnrollMsg(getErrorMessage(err, "Enrollment failed"));
+         queryClient.invalidateQueries({ queryKey: ["enrollment-status", id] });
+         setEnrolling(false);
       }
    };
 
-   if (loading)
-      return (
-         <>
-            {/* Loader  */}
-            <div className="flex-col gap-4 w-full h-screen flex items-center justify-center">
-               <div className="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full">
-                  <div className="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"></div>
-               </div>
-            </div>
-         </>
-      );
-   if (error) return <div>{error}</div>;
-   if (!course) return <div>No course data.</div>;
-
    return (
-      <div className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-lg mt-10">
-         <img
-            src={course.coverImage || "/img/avatar.png"}
-            alt={course.title}
-            className="w-full h-64 object-contain border rounded-md mb-6"
-         />
-         <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-         <p className="mb-4 text-theme-medium">{course.description}</p>
-         <div className="mb-2">
-            <span className="bg-gray-100 text-theme-medium px-3 py-1 rounded-full text-lg mr-2">
-               {course.category}
-            </span>
-            <span className="border-theme-accent border text-theme-accent px-3 py-1 rounded-md text-sm font-medium">
-               {course.level}
-            </span>
+      <div className="bg-cream">
+         <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pb-16 pt-7 sm:px-5">
+            <Breadcrumb
+               items={[
+                  { label: "Courses", to: "/courses" },
+                  { label: course.level, to: `/courses?level=${course.level}` },
+                  { label: course.title },
+               ]}
+            />
+            <div className="flex flex-col items-start gap-8 lg:flex-row">
+               <article className="flex w-full min-w-0 flex-1 flex-col gap-5">
+                  <Picture src={course.coverImage} alt="" className="h-64 w-full rounded-2xl sm:h-80" />
+                  <div className="flex flex-wrap gap-2">
+                     <Badge>{course.level}</Badge>
+                     <Badge tone="outline">{categoryLabel(course.category)}</Badge>
+                  </div>
+                  <h1 className="m-0 font-display text-3xl font-bold leading-tight sm:text-4xl">{course.title}</h1>
+                  <div className="rounded-2xl border border-line bg-white p-6">
+                     <h2 className="mb-3 mt-0 text-xl font-bold">About this course</h2>
+                     <p className="m-0 whitespace-pre-line text-base leading-relaxed text-[#3e2219]">{course.description}</p>
+                  </div>
+               </article>
+
+               <aside className="flex w-full shrink-0 flex-col gap-4 rounded-2xl border border-line bg-white p-6 shadow-[0_8px_24px_rgba(43,13,7,0.06)] lg:sticky lg:top-24 lg:w-[340px]">
+                  <span className="font-display text-[32px] font-bold">
+                     {Number(course.price) === 0 ? "Free" : formatPrice(course.price)}
+                  </span>
+                  <span className="flex items-center gap-2 text-[15px] text-muted">
+                     <Users size={18} aria-hidden="true" />
+                     {course.enrolledCount || 0} enrolled
+                  </span>
+                  {owner && (
+                     <span className="flex items-center gap-2.5 text-[15px]">
+                        <Avatar user={owner} size={36} />
+                        <span>
+                           Taught by <strong>{owner.username}</strong>
+                           {owner.country && <span className="text-muted"> · {owner.country}</span>}
+                        </span>
+                     </span>
+                  )}
+                  {enrollMsg && <Notice>{enrollMsg}</Notice>}
+                  {isOwner ? (
+                     <p className="m-0 rounded-xl bg-cream p-3 text-center text-[15px] text-muted">This is your course.</p>
+                  ) : enrolled ? (
+                     <Link to="/myenrollments" className={`${btn.secondary} w-full`}>
+                        Enrolled ✓ · Go to my courses
+                     </Link>
+                  ) : (
+                     <button type="button" onClick={handleEnroll} disabled={enrolling} className={`${btn.primary} h-[52px] w-full`}>
+                        {enrolling ? "Enrolling..." : "Enroll"}
+                     </button>
+                  )}
+               </aside>
+            </div>
          </div>
-         <div className="font-semibold text-theme-medium mb-4 text-xl">
-            Rs. {course.price}
-         </div>
-         <div>
-            {/* <h2 className="text-xl font-semibold mb-2">Content</h2>
-            <ul className="list-disc pl-6">
-               {course.content?.map((item, idx) => (
-                  <li key={idx}>
-                     <strong>{item.title}</strong> ({item.duration} min)
-                  </li>
-               ))}
-            </ul> */}
-         </div>
-         <button
-            onClick={handleEnroll}
-            className=" w-full mt-6 px-6 py-2 bg-theme-dark text-white rounded-lg hover:bg-theme-accent">
-            Enroll
-         </button>
-         {enrollMsg && <div className="mt-4 text-green-600">{enrollMsg}</div>}
       </div>
    );
 };

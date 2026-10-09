@@ -14,20 +14,17 @@ import authRoute from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-const app = express();
 dotenv.config();
+const app = express();
 mongoose.set("strictQuery", true);
 
-const connect = async () => {
-   try {
-      await mongoose.connect(process.env.MONGO);
-      console.log("Database connected!");
-   } catch (error) {
-      console.log(error);
-   }
-};
+// Comma separated list, e.g. CLIENT_URL=http://localhost:5173,https://uraan-pink.vercel.app
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+   .split(",")
+   .map((origin) => origin.trim().replace(/\/$/, ""))
+   .filter(Boolean);
 
-app.use(cors({ origin: "https://uraan-pink.vercel.app", credentials: true }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -41,14 +38,51 @@ app.use("/api/reviews", reviewRoute);
 app.use("/api/courses", courseRoute);
 app.use("/api/enrollments", enrollmentRoute);
 
+app.use("/api", (req, res) => {
+   res.status(404).send({ success: false, status: 404, message: "Route not found!" });
+});
+
 app.use((err, req, res, next) => {
-   const errorStatus = err.status || 500;
-   const errorMessage = err.message || "Something went wrong!!";
+   let status = err.status || 500;
+   let message = err.message || "Something went wrong!!";
 
-   return res.status(errorStatus).send(errorMessage);
+   // Turn common database errors into readable messages
+   if (err.name === "ValidationError") {
+      status = 400;
+      message = Object.values(err.errors)
+         .map((e) =>
+            e.kind === "required" ? `${e.path} is required` : e.message
+         )
+         .join(", ");
+   } else if (err.name === "CastError") {
+      status = 400;
+      message = `Invalid value for ${err.path}`;
+   } else if (err.code === 11000) {
+      status = 409;
+      message = `${Object.keys(err.keyValue || {}).join(", ") || "Value"} already exists!`;
+   }
+
+   if (status >= 500) console.error(err);
+   return res.status(status).send({ success: false, status, message });
 });
 
-app.listen(process.env.PORT, () => {
-   connect();
-   console.log("Backend running!");
-});
+const PORT = process.env.PORT || 8800;
+
+const start = async () => {
+   if (!process.env.MONGO || !process.env.JWT_KEY) {
+      console.error("MONGO and JWT_KEY must be set in api/.env");
+      process.exit(1);
+   }
+   try {
+      await mongoose.connect(process.env.MONGO);
+      console.log("Database connected!");
+   } catch (error) {
+      console.error("Database connection failed:", error.message);
+      process.exit(1);
+   }
+   app.listen(PORT, () => {
+      console.log(`Backend running on port ${PORT}!`);
+   });
+};
+
+start();
