@@ -5,6 +5,7 @@ import { FeatureCities } from "../../components/featurecities/FeatureCities";
 import { FeatureCourses } from "../../components/featurecourse/FeatureCourses";
 import { Terminals } from "../../components/terminals/Terminals";
 import { Howitworks } from "../../components/howitworks/Howitworks";
+import { FeatureBlog } from "../../components/featureblog/FeatureBlog";
 
 export const Home = () => {
    return (
@@ -15,6 +16,7 @@ export const Home = () => {
          <FeatureCourses />
          <Howitworks />
          <Terminals />
+         <FeatureBlog />
       </div>
    );
 };
