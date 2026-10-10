@@ -156,6 +156,9 @@ URAAN/
 4. **Environment Setup**
    Copy `api/.env.example` to `api/.env` and `frontend/.env.example` to `frontend/.env`, then fill in the values
    (MongoDB connection string, JWT secret, Cloudinary upload URL).
+   The app uses the database named in `MONGO_DB` (default `uraan`), whatever the connection string says.
+   To copy data from another database in the same cluster: `npm run migrate-data -- --from <old> --dry-run`,
+   then run it again without `--dry-run`.
 
 5. **Start Development**
    ```bash

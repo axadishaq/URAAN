@@ -13,6 +13,7 @@ import enrollmentRoute from "./routes/enrollment.route.js";
 import authRoute from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { connectDb, dbName } from "./utils/db.js";
 
 dotenv.config();
 const app = express();
@@ -74,8 +75,9 @@ const start = async () => {
       process.exit(1);
    }
    try {
-      await mongoose.connect(process.env.MONGO);
-      console.log("Database connected!");
+      // database name comes from MONGO_DB (default "uraan"), not the URI
+      await connectDb();
+      console.log(`Database connected! (${dbName()})`);
    } catch (error) {
       console.error("Database connection failed:", error.message);
       process.exit(1);
