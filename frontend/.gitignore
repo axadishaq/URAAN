@@ -25,3 +25,6 @@ dist-ssr
 
 # Environment variables (keep secrets out of git)
 .env
+
+.vercel
+.env*

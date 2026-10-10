@@ -16,7 +16,7 @@ services:
         value: production
       # Frontend sites allowed to call the API directly (comma separated)
       - key: CLIENT_URL
-        value: https://uraan-pink.vercel.app,https://uraaan.netlify.app
+        value: https://uraan-pink.vercel.app
       # Render creates a long random secret for signing login tokens
       - key: JWT_KEY
         generateValue: true
