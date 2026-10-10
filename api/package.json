@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "make-admin": "node scripts/makeAdmin.js"
+    "make-admin": "node scripts/makeAdmin.js",
+    "migrate-data": "node scripts/migrateData.js"
   },
   "keywords": [],
   "author": "",

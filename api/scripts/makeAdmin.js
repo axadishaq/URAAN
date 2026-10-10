@@ -4,6 +4,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "../models/user.model.js";
+import { connectDb } from "../utils/db.js";
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ if (!username) {
    process.exit(1);
 }
 
-await mongoose.connect(process.env.MONGO);
+await connectDb();
 const user = await User.findOneAndUpdate(
    { username },
    { $set: { isAdmin: !remove } },

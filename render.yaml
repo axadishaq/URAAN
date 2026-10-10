@@ -23,6 +23,9 @@ services:
       # MongoDB Atlas connection string, entered when the Blueprint is created
       - key: MONGO
         sync: false
+      # database name inside the Atlas cluster
+      - key: MONGO_DB
+        value: uraan
       # Optional: user id that always gets admin rights
       - key: ADMIN_ID
         sync: false
