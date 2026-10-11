@@ -39,6 +39,10 @@ const Add = () => {
       revisionNumber: "",
    });
    const [features, setFeatures] = useState([]);
+   // a city outside the main list is typed in
+   const [otherCity, setOtherCity] = useState(
+      () => !!currentUser?.country && !CITIES.includes(currentUser.country)
+   );
    const [featureText, setFeatureText] = useState("");
    const [photos, setPhotos] = useState([]); // [{ file, url }]
    const [errors, setErrors] = useState({});
@@ -175,20 +179,36 @@ const Add = () => {
                               </option>
                            ))}
                         </SelectField>
-                        <Field
-                           label="City *"
-                           name="country"
-                           list="city-options"
-                           placeholder="e.g. Multan"
-                           value={form.country}
-                           onChange={set}
-                           error={errors.country}
-                        />
-                        <datalist id="city-options">
-                           {CITIES.map((c) => (
-                              <option key={c} value={c} />
-                           ))}
-                        </datalist>
+                        {otherCity ? (
+                           <Field
+                              label="City *"
+                              name="country"
+                              placeholder="Your city"
+                              value={form.country}
+                              onChange={set}
+                              error={errors.country}
+                           />
+                        ) : (
+                           <SelectField
+                              label="City *"
+                              name="country"
+                              value={form.country}
+                              onChange={(e) => {
+                                 if (e.target.value === "__other") {
+                                    setOtherCity(true);
+                                    setForm({ ...form, country: "" });
+                                 } else set(e);
+                              }}
+                              error={errors.country}>
+                              <option value="">Choose your city</option>
+                              {CITIES.map((c) => (
+                                 <option key={c} value={c}>
+                                    {c}
+                                 </option>
+                              ))}
+                              <option value="__other">Other city…</option>
+                           </SelectField>
+                        )}
                      </div>
                   </Step>
 

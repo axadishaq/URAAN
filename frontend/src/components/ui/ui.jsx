@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, ImageIcon, Star, Eye, EyeOff } from "lucide-react";
+import Select from "./Select";
 
 // ---------- Form fields ----------
 const inputBase =
@@ -59,20 +60,33 @@ export const PasswordField = ({ label = "Password", error, hint, ...props }) => 
    );
 };
 
-export const SelectField = ({ label, error, children, className = "", id, ...props }) => {
-   const fieldId = id || props.name;
+// Labelled themed dropdown. Accepts <option> children like a normal <select>
+// and calls onChange({ target: { name, value } }) so form handlers work as before.
+export const SelectField = ({ label, error, children, className = "", id, name, value, onChange, placeholder }) => {
+   const fieldId = id || name;
+   const options = React.Children.toArray(children)
+      .filter((c) => c?.type === "option")
+      .map((c) => ({
+         value: c.props.value ?? (typeof c.props.children === "string" ? c.props.children : ""),
+         label: c.props.children,
+      }));
+   // an option with an empty value acts as the placeholder
+   const empty = options.find((o) => o.value === "");
    return (
-      <label htmlFor={fieldId} className={`flex flex-col gap-1.5 text-sm font-semibold ${className}`}>
-         {label}
-         <select
+      <div className={`flex flex-col gap-1.5 text-sm font-semibold ${className}`}>
+         <span id={`${fieldId}-label`}>{label}</span>
+         <Select
             id={fieldId}
-            aria-invalid={!!error}
-            className={`${inputBase} h-12 font-normal ${error ? "border-2 border-danger" : "border-line-strong"}`}
-            {...props}>
-            {children}
-         </select>
+            name={name}
+            value={value}
+            ariaLabelledBy={`${fieldId}-label`}
+            invalid={!!error}
+            placeholder={placeholder || empty?.label || "Select…"}
+            options={options.filter((o) => o.value !== "")}
+            onChange={(v) => onChange?.({ target: { name, value: v } })}
+         />
          {error && <span className="text-[13px] font-normal text-[#8e1f17]">{error}</span>}
-      </label>
+      </div>
    );
 };
 

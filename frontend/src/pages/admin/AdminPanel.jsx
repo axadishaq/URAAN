@@ -12,6 +12,7 @@ import { formatPrice } from "../../utils/format";
 import { Avatar, Badge, EmptyState, Notice, Picture, Spinner } from "../../components/ui/ui";
 import { btn } from "../../components/ui/styles";
 import { useToast } from "../../components/ui/Toast";
+import Select from "../../components/ui/Select";
 
 const SECTIONS = [
    { id: "home", label: "Overview", icon: LayoutDashboard },
@@ -242,15 +243,19 @@ export default function AdminPanel() {
                   tools={
                      <>
                         <SearchBox value={userSearch} onChange={setUserSearch} placeholder="Search name or email" />
-                        <label className="flex">
-                           <span className="sr-only">Role</span>
-                           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="h-10 rounded-[10px] border border-line-strong bg-white px-2.5 text-sm">
-                              <option value="all">All roles</option>
-                              <option value="provider">Providers</option>
-                              <option value="customer">Customers</option>
-                              <option value="admin">Admins</option>
-                           </select>
-                        </label>
+                        <Select
+                           ariaLabel="Role"
+                           value={roleFilter}
+                           onChange={setRoleFilter}
+                           options={[
+                              { value: "all", label: "All roles" },
+                              { value: "provider", label: "Providers" },
+                              { value: "customer", label: "Customers" },
+                              { value: "admin", label: "Admins" },
+                           ]}
+                           className="w-44"
+                           size="xs"
+                        />
                      </>
                   }>
                   {users.isLoading ? (

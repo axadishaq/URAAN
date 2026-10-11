@@ -19,7 +19,7 @@ dotenv.config();
 const app = express();
 mongoose.set("strictQuery", true);
 
-// Comma separated list, e.g. CLIENT_URL=http://localhost:5173,https://uraan-pink.vercel.app
+// Comma separated list, e.g. CLIENT_URL=http://localhost:5173,https://uraaan.vercel.app
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
    .split(",")
    .map((origin) => origin.trim().replace(/\/$/, ""))

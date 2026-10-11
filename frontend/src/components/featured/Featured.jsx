@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, MapPin } from "lucide-react";
 import { CITIES } from "../../utils/cities";
+import Select from "../ui/Select";
 
 const POPULAR = [
    ["Technician", "/gigs?category=Technicion"],
@@ -49,19 +50,16 @@ function Featured() {
                      className="min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-subtle focus:outline-none"
                   />
                </label>
-               <label className="flex h-[54px] flex-[1_1_170px] items-center gap-2.5 rounded-[10px] bg-cream px-3.5">
-                  <MapPin size={20} className="text-subtle" aria-hidden="true" />
-                  <span className="sr-only">City</span>
-                  <select
-                     value={city}
-                     onChange={(e) => setCity(e.target.value)}
-                     className="min-w-0 flex-1 bg-transparent text-base text-ink focus:outline-none">
-                     <option value="">Any city</option>
-                     {CITIES.map((c) => (
-                        <option key={c}>{c}</option>
-                     ))}
-                  </select>
-               </label>
+               <Select
+                  ariaLabel="City"
+                  icon={MapPin}
+                  value={city}
+                  onChange={setCity}
+                  options={[{ value: "", label: "Any city" }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+                  className="flex-[1_1_170px]"
+                  size="lg"
+                  bare
+               />
                <button
                   type="submit"
                   className="h-[54px] flex-[0_0_auto] rounded-[10px] bg-ink px-8 text-base font-semibold text-white hover:bg-[#4a1e14]">

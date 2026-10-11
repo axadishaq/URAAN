@@ -8,6 +8,7 @@ import newRequest, { getErrorMessage } from "../../utils/newRequest";
 import { SERVICE_CATEGORIES, categoryLabel } from "../../utils/categories";
 import { CITIES } from "../../utils/cities";
 import { Breadcrumb, EmptyState, Notice } from "../../components/ui/ui";
+import Select from "../../components/ui/Select";
 import { btn } from "../../components/ui/styles";
 
 const SORTS = [
@@ -141,18 +142,16 @@ function Gigs({ city }) {
          </fieldset>
 
          {!city && (
-            <label className="flex flex-col gap-2 text-[15px] font-bold">
-               City
-               <select
+            <div className="flex flex-col gap-2 text-[15px] font-bold">
+               <span id="filter-city-label">City</span>
+               <Select
+                  ariaLabelledBy="filter-city-label"
                   value={draft.country || ""}
-                  onChange={(e) => setDraft({ ...draft, country: e.target.value })}
-                  className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-[15px] font-normal">
-                  <option value="">Any city</option>
-                  {CITIES.map((c) => (
-                     <option key={c}>{c}</option>
-                  ))}
-               </select>
-            </label>
+                  onChange={(v) => setDraft({ ...draft, country: v })}
+                  options={[{ value: "", label: "Any city" }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+                  size="sm"
+               />
+            </div>
          )}
 
          <fieldset className="m-0 flex flex-col gap-2.5 border-0 p-0">
@@ -233,20 +232,19 @@ function Gigs({ city }) {
                      <SlidersHorizontal size={18} aria-hidden="true" />
                      Filters{activeCount ? ` (${activeCount})` : ""}
                   </button>
-                  <label className="flex items-center gap-2.5 text-sm text-muted">
-                     <span className="hidden sm:inline">Sort by</span>
-                     <select
-                        aria-label="Sort by"
+                  <div className="flex items-center gap-2.5 text-sm text-muted">
+                     <span className="hidden sm:inline" aria-hidden="true">
+                        Sort by
+                     </span>
+                     <Select
+                        ariaLabel="Sort by"
                         value={sort}
-                        onChange={(e) => update({ sort: e.target.value })}
-                        className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-[15px] text-ink">
-                        {SORTS.map(([v, l]) => (
-                           <option key={v} value={v}>
-                              {l}
-                           </option>
-                        ))}
-                     </select>
-                  </label>
+                        onChange={(v) => update({ sort: v })}
+                        options={SORTS.map(([v, l]) => ({ value: v, label: l }))}
+                        className="w-[200px]"
+                        size="sm"
+                     />
+                  </div>
                </div>
             </div>
 
