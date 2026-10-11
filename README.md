@@ -187,7 +187,7 @@ URAAN/
 3. The API runs at `https://uraan-api.onrender.com`. If you ever rename the Render
    service, update the address in `frontend/vercel.json`.
 
-**Frontend on Vercel** (live at https://uraan-pink.vercel.app)
+**Frontend on Vercel** (live at https://uraaan.vercel.app)
 - Set `VITE_REQUEST=/api/` (and `VITE_CLOUDINARY_URL`) and redeploy.
 - API calls go through the site's own domain (`frontend/vercel.json` forwards `/api` to
   Render), so the login cookie works in every browser, including Safari, and refreshing
